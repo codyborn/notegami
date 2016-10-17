@@ -1,1 +1,7 @@
-
+# Ignore directories
+AbyssServer/WebRole/bin/
+AbyssServer/csx/
+AbyssServer/bin/
+AbyssServer/obj/
+AbyssServer/TestResults/
+AbyssServer/ecf/
