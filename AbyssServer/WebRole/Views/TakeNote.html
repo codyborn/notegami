@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />    
+    <title>Notegami</title>
+    <!-- Icon Creation -->
+    <link href="Images/fav_icon.ico" rel="shortcut icon" type="image/x-icon" />
+    <!-- for Chrome on Android, multi-resolution icon of 196x196 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="shortcut icon" sizes="196x196" href="Images/app_icon.png">
+    <!-- for ios 7 style, multi-resolution icon of 152x152 -->
+    <!--meta name="apple-mobile-web-app-capable" content="yes"-->
+    <meta name="apple-mobile-web-app-status-barstyle" content="black-translucent">
+    <link rel="apple-touch-icon" href="Images/app_icon.png">
+    <link rel="apple-touch-startup-image" href="Images/app_icon.png">
+    
+    <!-- Insert this line above script imports  
+        http://stackoverflow.com/questions/32621988/electron-jquery-is-not-defined
+    -->
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+
+    <!-- normal script imports etc  -->
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC59W4ZXQtRg9I6ITSgMvVG91flEwOMlgg"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.0.js"></script>
+    <script src="Scripts/Common.js"></script>
+    <script src="Scripts/Location.js"></script>
+
+    <!-- Insert this line after script imports -->
+    <script>if (window.module) module = window.module;</script>
+
+    <script type="text/javascript">
+
+    </script>
+    <link rel="stylesheet" type="text/css" href="Style/Style.css">
+    <link rel="stylesheet" type="text/css" href="Style/TakeNote.css">    
+    
+</head>
+<body onload="CheckAuthCookie(); GeoCoderInit(); PreventFOUC(); DisplayNoteCharactersLeft();">    
+    <input id="LogoutButton" type="submit" onclick="LogOut()" value="Log Out" />
+    <div id="WorkingArea" class="ClearStyleOnMobile">
+        <div id="SearchBarContainer" class="InputGroup ClearStyleOnMobile" onkeyup="PerformActionIfReturn(event)">            
+            <div id="SearchBar" class="InputGroup ClearStyleOnMobile">
+                <table id="SearchBarTable">
+                    <tr>
+                        <td id="SearchInputTD">
+                            <input type="text" id="QueryContents" placeholder="Search" />
+                        </td>
+                        <td id="SearchButtonTD">
+                            <input type="submit" id="QueryButton" onclick="QueryNotes()" value="" />
+                        </td>
+                    </tr>
+                </table>
+                <div id="QuickSearchContainer"></div>
+            </div>            
+        </div>
+        <div id="Results" class="contractedResults ClearStyleOnMobile" onscroll="UpdateSearchBarLocation()" style="display:none;">
+            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noteNodes().length == 0 && $root.noteListViewModel.queryOccurred())">No results matched</div>
+            <div class="NoResultsText noselect" data-bind="visible: !$root.noteListViewModel.queryOccurred()">Search for something to see your notes</div>
+            <span data-bind="foreach: $root.noteListViewModel.noteNodes, visible: $root.noteListViewModel.noteNodes().length > 0">
+                <div class="noteNode" data-bind="visible: shouldDisplayNode()">
+                    <div class="noteTitle" data-bind="click: $root.noteListViewModel.queryTag, text: tag"></div>
+                    <table class="noteContents">
+                        <tbody data-bind="foreach: notes">
+                            <tr class="noteEntry" data-bind="visible: shouldBeVisible()">
+                                <td class="noteTextTD">
+                                    <div class="noteText noselect" data-bind="visible: !editingNote(), html: formattedText(), css: { strikeThrough: note().completed() }, pressAndHold: pressAndHoldAction">
+                                    </div>
+                                    <div data-bind="visible: editingNote()">
+                                        <!-- If you change this structure, update the focus() path in TakeNote.js -->
+                                        <textarea type="text" class="noteEditInput" maxlength="1000" data-bind="textInput: note().contents, hasfocus: note().contents.focused, css: { strikeThrough: note().completed() }" onfocus="HideNoteInput()" onblur="DisplayNoteInput()"></textarea>                                        
+                                    </div>
+                                </td>
+                                <td class="noteTimestampTD">
+                                    <div class="noteTimestamp noselect" data-bind="html: note().formattedTimestamp()">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr data-bind="visible: editingNote() && shouldBeVisible()">
+                                <td colspan="2" class="noborder nopaddingtop">
+                                    <div class="EditActionButtons">
+                                        <span class="DeleteActionButtonContainer">
+                                            <input type="submit" class="DeleteNoteButton" data-bind="event: { mousedown: deleteNote }" value="Delete" />
+                                            <label class="CompleteButton"><input type="checkbox" data-bind="checked: completed" value="Complete" />Complete</label>
+                                        </span>
+                                        <span class="EditActionButtonsContainer">
+                                            <input type="submit" class="CancelEditButton" data-bind="event: { mousedown: cancelEdit }" value="Cancel" />
+                                            <input type="submit" class="SaveEditButton" data-bind="event: { mousedown: saveEdit }" value="Save" />
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </span>
+            <div id="ResultPostPadding"></div>
+        </div>
+        <div id="AddNoteBar" class="InputGroup ClearStyleOnMobile" data-bind="visible: noteInputViewModel.shouldBeVisible()">
+            <table id="AddNoteTable">
+                <tr>
+                    <td id="NoteInputTD">
+                        <div id="NoteInputContainer">
+                            <textarea rows="10" cols="30" id="NoteContents" placeholder="Add a new note..." onkeyup="DisplayNoteCharactersLeft()" maxlength="1000"></textarea>
+                        </div>
+                    </td>
+                    <td id="NoteButtonTD">
+                        <input type="submit" id="NoteButton" onclick="CreateNote()" value="" />
+                    </td>
+                </tr>
+                <tr>
+                    <td id="NoteDisplayTD">
+                        <div id="NoteDisplay">
+                            <div id="LocationStatusMessage"></div>
+                            <div id="NoteStatusMessage"></div>
+                        </div>
+                    </td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://ajax.aspnetcdn.com/ajax/knockout/knockout-3.3.0.js"></script>    
+    <script src="Scripts/TakeNote.js"></script>
+</body>
+</html>

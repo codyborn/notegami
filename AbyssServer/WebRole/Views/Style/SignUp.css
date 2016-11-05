@@ -1,0 +1,99 @@
+﻿
+#Title {
+    font-size:300%;
+    color:#FFF;
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    margin-bottom:.5em;
+}
+#TitleImg {
+    width:15%;
+    min-width:1.2em;
+    height:auto;
+    padding-right:.5em;
+    position:relative;
+    top:.2em;
+}
+#TitleText {
+    display:inline;
+}
+#ResetPasswordTitle {    
+    color:#FFF;
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    margin-bottom:.5em;
+}
+#Form {            
+    width:100%;
+    max-width:20em;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    /* bring your own prefixes */
+    transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%); /* IE 9 */
+   	-webkit-transform: translate(-50%, -50%); /* Safari */
+}
+input {
+    width:95%;
+    display:block;
+    height:2.5em;
+    font-size:20px;
+}
+#ActionChangeLinks {
+    margin-top:5em;
+    color:#FFF;
+    font-size:18px;
+}
+
+#errorDisplay {
+    height:1em;
+    color: #FFF;
+    font-size:18px;
+    padding-bottom:1em;
+}
+input[type=submit] {
+    width:100%;
+    margin-top:1em;
+    position: fixed;
+    left: 50%;
+    /* bring your own prefixes */
+    transform: translate(-50%);
+    -ms-transform: translate(-50%); /* IE 9 */
+   	-webkit-transform: translate(-50%); /* Safari */
+}
+.StatusButton {
+    background-size: 60% !important;
+}
+#AppStoreLinks {
+    margin-top:5em;
+    position: fixed;
+    left: 50%;
+    /* bring your own prefixes */
+    transform: translate(-50%);
+    -ms-transform: translate(-50%); /* IE 9 */
+   	-webkit-transform: translate(-50%); /* Safari */
+}
+#AndroidAppLinkIcon {
+    width:10em;
+    height:auto;
+}
+
+@media only screen and (max-device-width: 480px) {
+    #Title {
+        
+    }
+    div{
+        
+    }
+    #Form {
+        width: 90%;
+    }
+
+    
+    input[type=submit] {
+        
+    }
+    #AppStoreLinks {
+        display: none;
+    }
+
+}

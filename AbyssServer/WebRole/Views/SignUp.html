@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Notegami</title>
+    <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0' name='viewport' />
+    <!-- Icon Creation -->
+    <link href="Images/fav_icon.ico" rel="shortcut icon" type="image/x-icon" />
+    <!-- for ios 7 style, multi-resolution icon of 152x152 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-barstyle" content="black-translucent">
+    <link rel="apple-touch-icon" href="Images/app_icon.png">
+    <!-- for Chrome on Android, multi-resolution icon of 196x196 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="shortcut icon" sizes="196x196" href="Images/app_icon.png">
+
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="Scripts/Common.js"></script>
+    <link rel="stylesheet" type="text/css" href="Style/Style.css">
+    <link rel="stylesheet" type="text/css" href="Style/SignUp.css">
+    <script type="text/javascript">
+        // full screen on mobile devices
+        window.addEventListener("load", function () { window.scrollTo(0, 0); });
+        var waitingOnServer = false;
+        var activeAction = CreateUser;
+        $(function () {
+            $("input[type=submit], button")
+                .button()
+                .click(function (event) {
+                    showError("");
+                    event.preventDefault();
+                });
+        });
+        
+        function CreateUser() {
+            if (waitingOnServer)
+            {
+                // Already creating user
+                return;
+            }
+            waitingOnServer = true;
+            ShowLoading("SignupButton");
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+            var user =
+            {
+                Email: email,
+                Password: password
+            }
+            var createUser = {
+                User: user,
+                UTCOffset: new Date().getTimezoneOffset()
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "../user/CreateUser",
+                data: createUser,
+                success: function (response) {
+                    waitingOnServer = false;
+                    if (response != "") {                        
+                        if (response.Error == "Success") {
+                            StoreAuthToken(email, password, response.Token);
+                            var redirect = 'TakeNote.html?q=#tutorial';
+                            console.log('created user: ' + response);
+                            window.location.replace(redirect);
+                        }
+                        else {
+                            showError(response.Error);
+                            HideButtonImage("SignupButton");
+                        }
+                    }
+                    else {
+                        showError("Unknown Error");
+                        HideButtonImage("SignupButton");
+                    }
+                },
+                dataType: 'json'
+            });
+        }
+        
+        function AuthUser(callback) {
+            ShowLoading("SigninButton");
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+            AuthUserAndSetCookie(email, password,
+                function () { window.location.replace('TakeNote.html'); }, // on success
+                function () { showError("Incorrect credentials"); HideButtonImage("SigninButton"); }) // on failure
+        }	
+		
+		// If the cookie exists
+		function RenewAuthCookie()
+        {
+		    if (CacheStoreGet('prevSignup') != null) {
+                DisplayLogin();
+		    }
+
+		    if (!is_safari && !is_explorer) {
+		        document.getElementById('email').focus();
+		    }
+		    var email = CacheStoreGet("email");
+			if (email == null)
+			{
+				// no cookie is set
+				return;
+			}
+			var password = CacheStoreGet("password");
+
+			ShowLoading("SignupButton");
+			AuthUserAndSetCookie(email, password,
+                function () { window.location.replace('TakeNote.html'); HideButtonImage("SignupButton"); }, // on success
+                function () { showError("Please log in to continue"); HideButtonImage("SignupButton"); }) // on failure
+		}
+
+		function InitiatePWReset()
+		{
+		    ShowLoading("PWResetButton");
+		    var email = document.getElementById("email").value;
+		    var user =
+            {
+                Email: email
+            }
+
+		    $.ajax({
+		        type: "POST",
+		        url: "../user/SetPWResetToken",
+		        data: user,
+		        success: function (response) {
+		            HideButtonImage("PWResetButton");
+		            if (response == "Success") {
+		                document.getElementById('ResetPasswordTitle').innerHTML = "Check your email for a reset link in a couple minutes";
+		                document.getElementById('PWResetButton').style.display = "none";
+		                console.log('reset password: ' + response);		                                    
+		            }
+		            else {
+		                showError("Invalid Email");
+		                HideButtonImage("PWResetButton");
+		            }
+		        },
+		        dataType: 'json'
+		    });
+		}
+
+		function DisplaySignup() {
+		    activeAction = CreateUser;
+		    document.getElementById('SigninButton').style.display = "none";
+		    document.getElementById('SignupLink').style.display = "none";
+		    document.getElementById('PWResetButton').style.display = "none";
+		    document.getElementById('CancelPWResetButton').style.display = "none";
+		    document.getElementById('ResetPasswordTitle').style.display = "none";
+		    document.getElementById('SignupButton').style.display = "block";
+		    document.getElementById('LoginLink').style.display = "block";
+		    document.getElementById('password').style.display = "block";
+		    document.getElementById('ActionChangeLinks').style.display = "block";
+		    document.getElementById('email').title = "Only to be used for account recovery. Never a correspondence. Ever.";
+		    document.getElementById('password').title = "Encrypted using sha-256";
+		    showError("");
+		}
+		function DisplayLogin() {
+		    activeAction = AuthUser;
+		    document.getElementById('SignupButton').style.display = "none";
+		    document.getElementById('LoginLink').style.display = "none";
+		    document.getElementById('PWResetButton').style.display = "none";
+		    document.getElementById('CancelPWResetButton').style.display = "none";
+		    document.getElementById('ResetPasswordTitle').style.display = "none";
+		    document.getElementById('SigninButton').style.display = "block";
+		    document.getElementById('SignupLink').style.display = "block";
+		    document.getElementById('password').style.display = "block";
+		    document.getElementById('ActionChangeLinks').style.display = "block";
+		    document.getElementById('email').title = "";
+		    document.getElementById('password').title = "";
+		    showError("");
+		}
+
+		function DisplayPWReset() {
+		    activeAction = InitiatePWReset;
+		    document.getElementById('SignupButton').style.display = "none";
+		    document.getElementById('LoginLink').style.display = "none";
+		    document.getElementById('SigninButton').style.display = "none";
+		    document.getElementById('SignupLink').style.display = "none";
+		    document.getElementById('password').style.display = "none";
+		    document.getElementById('ActionChangeLinks').style.display = "none";
+		    
+		    document.getElementById('ResetPasswordTitle').style.display = "block";
+		    document.getElementById('PWResetButton').style.display = "block";
+		    document.getElementById('CancelPWResetButton').style.display = "block";
+		    document.getElementById("email").focus();
+		}
+
+		function ClearInput()
+		{
+		    document.getElementById('email').value = "";
+		    document.getElementById('password').value = "";
+		}
+    </script>
+</head>
+<body onload="RenewAuthCookie();">   
+    <img style="display:none" src="Images/splash_icon.png" />
+    <div id="Form" onkeyup="PerformActionIfReturn(event)">
+        <div id="Title"><img id="TitleImg" src="Images/app_icon.png" /><div id="TitleText">Notegami</div></div>
+        <div id="errorDisplay"> </div>    
+        <div style="display:none;" id="ResetPasswordTitle">An email will be sent to this address to reset your password</div>
+        <input type="text" id="email" placeholder="Email"/>
+        <input type="password" id="password" placeholder="Password" />
+        <input id="SignupButton" onclick="CreateUser()" type="submit" value="Signup" />      
+        <input style="display:none" id="SigninButton" onclick="AuthUser()" type="submit" value="Login" />
+        <input style="display:none" id="PWResetButton" onclick="InitiatePWReset()" type="submit" value="Reset" />
+        <input style="display:none; margin-top:4em;" id="CancelPWResetButton" onclick="DisplaySignup()" type="submit" value="Cancel" />
+        <div id="ActionChangeLinks">
+            <div id="SignupLink" style="display:none">
+                Don't have an account? <a href="#" onclick="DisplaySignup()">Sign up</a>
+            </div>
+            <div id="LoginLink">
+                Already have an account? <a href="#" onclick="DisplayLogin()">Log in</a>
+            </div>
+            <div id="ForgotPWLink"><a href="#" onclick="DisplayPWReset()">Forgot Password?</a></div>            
+        </div>
+        <div id="AppStoreLinks">
+            <a href='https://play.google.com/store/apps/details?id=com.NotegamiAndroid.NotegamiAndroid&utm_source=global_co&utm_medium=prtnr&utm_content=Mar2515&utm_campaign=PartBadge&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img id="AndroidAppLinkIcon" alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' /></a>           
+        </div>
+    </div>
+</body>
+</html>

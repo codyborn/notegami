@@ -1,0 +1,61 @@
+﻿html {
+    height:100%;
+    width:100%;
+    background: #0093b4;
+}
+body {
+    margin: 0;
+}
+
+input {
+    padding-left:5px;    
+    padding-right:5px;    
+    border-radius: 3px; 
+    /* prevent iphone from rounding the corners */
+    -webkit-appearance: none;
+    -webkit-border-radius: 3px;
+}
+input[type=checkbox]{
+    -webkit-appearance: checkbox;
+}
+
+/* Input Elements */
+input[type=text],input[type=password],textarea{    
+    background:#f5f8fa;
+    margin-bottom: 1px;
+}
+
+
+input[type=submit] {
+    background:#f5f8fa; border:0 none;
+    cursor:pointer;
+    color:#66757f;
+}
+a {
+    color: #FFF;
+}
+
+/* Increase the background image size while performing action */
+.StatusButton {
+    color: rgba(0,0,0,0) !important;
+    background-position:center !important;
+}
+
+
+.strikeThrough {
+    text-decoration: line-through;
+}
+.noborder {
+    border: none !important;
+}
+.nopaddingtop {
+    padding-top: 0em !important;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}

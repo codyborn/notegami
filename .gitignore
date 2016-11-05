@@ -1,7 +1,15 @@
 # Ignore directories
 AbyssServer/WebRole/bin/
+AbyssServer/WebRole/obj/
+AbyssServer/WebRole/objd/
 AbyssServer/csx/
 AbyssServer/bin/
 AbyssServer/obj/
 AbyssServer/TestResults/
 AbyssServer/ecf/
+AbyssServer/rcf/
+AbyssServer/packages/
+
+# Ignore files containing secrets
+AbyssServer/ServiceConfiguration.*.cscfg
+AbyssTest/App.config

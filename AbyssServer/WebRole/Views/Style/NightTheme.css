@@ -1,0 +1,49 @@
+﻿html {
+    background-color:#007792;
+    color:#f5f8fa;
+}
+body {
+
+}
+#SearchBarContainer {
+    background-color:#007792;
+}
+#SearchBar {
+    background-color: #007792;
+}
+input[type=text], textarea{
+    background:#333 !important;
+    border-style:solid;
+    border-width:1px;
+    border-color:#888;
+    color:#FFF;
+}
+input[type=submit] {
+    background-color:#444;
+    color:#f5f8fa;
+}
+#WorkingArea {
+    background: #262626;
+}
+.noteNode {
+    color: #FFF;
+    background: #333;
+}
+.noteContents {
+    color: #FFF;
+    background: #333;
+}
+.noteText {    
+    color: #FFF !important;
+}
+.noteText a {
+    color: #0093b4;
+}
+#NoteDisplay {
+    color: #FFF !important;
+}
+@media only screen and (max-device-width: 480px) {
+    #AddNoteBar {
+        background-color: #007792;
+    }
+}

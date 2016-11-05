@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "AbyssServer", "AbyssServer.ccproj", "{8A38CAB6-8B50-48A7-A9B1-3AAB06C0F26A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRole", "WebRole\WebRole.csproj", "{A73FFAA6-5294-40E0-9193-5B04FD1C85F8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AbyssTest", "..\AbyssTest\AbyssTest.csproj", "{EB90B78A-94C6-466A-9F67-7ADFD1304B4C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8A38CAB6-8B50-48A7-A9B1-3AAB06C0F26A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A38CAB6-8B50-48A7-A9B1-3AAB06C0F26A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A38CAB6-8B50-48A7-A9B1-3AAB06C0F26A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A38CAB6-8B50-48A7-A9B1-3AAB06C0F26A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A73FFAA6-5294-40E0-9193-5B04FD1C85F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A73FFAA6-5294-40E0-9193-5B04FD1C85F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A73FFAA6-5294-40E0-9193-5B04FD1C85F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A73FFAA6-5294-40E0-9193-5B04FD1C85F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB90B78A-94C6-466A-9F67-7ADFD1304B4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB90B78A-94C6-466A-9F67-7ADFD1304B4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB90B78A-94C6-466A-9F67-7ADFD1304B4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB90B78A-94C6-466A-9F67-7ADFD1304B4C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

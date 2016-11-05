@@ -1,0 +1,388 @@
+﻿/* Disable Font Boosting */
+body, body * {
+    max-height: 1000000px;
+}
+#WorkingArea {
+    height:100%;
+    width:50%;
+    min-width:40em;
+    background: #f5f8fa;
+    position: fixed;
+    left: 50%;
+    transform: translate(-50%);
+    -ms-transform: translate(-50%); /* IE 9 */
+   	-webkit-transform: translate(-50%); /* Safari */
+}
+
+input[type=submit] {
+    font-size:20px; 
+    height:1.8em;
+    background: #505c65;
+    color:#FFF;
+    background-size:cover;
+    background-repeat: no-repeat;
+    background-position-y: center;
+    padding:0em .2em 0em .2em;
+}
+input[type=text],textarea {
+    width:35em;
+    height:2.5em;
+    resize: none;
+}
+
+textarea {
+    height:5em;
+}
+
+#LogoutButton {    
+    position: absolute;
+    top: 0em;
+    right:1em;
+    -webkit-border-radius: 0px 0px 2px 2px;
+    border-radius: 0px 0px 2px 2px;
+    z-index:100;
+}
+
+.InputGroup {
+    width:38em;
+    position: fixed;
+    left: 50%;
+    transform: translate(-50%);
+    -ms-transform: translate(-50%); /* IE 9 */
+   	-webkit-transform: translate(-50%); /* Safari */
+}
+#SearchBarContainer {
+    width:100em;
+    height:10.3em;
+    background: #0093b4;
+    z-index:99;
+    position:absolute;
+}
+#SearchBar {
+    background: #0093b4;
+    height: 9em;
+    padding-top:.5em;
+}    
+#SearchBarTable {
+    width:98%;
+    height:2em;
+}
+#SearchInputTD {
+    width:90%;
+}
+#SearchButtonTD {
+    width:10%;
+}
+#QueryContents {
+    width: 98%;
+}
+#QueryButton {
+    background-image:url('../Images/search_icon.png');
+    background-size: 40%;
+    background-position:center;
+    width:100%;
+    height:100%;
+}
+#QuickSearchContainer {    
+}
+.quickSearchButton {
+    font-size: 15px !important;
+    margin: .5em 0em 0em .5em;
+    outline: none;
+    /*background-color:#b48800 !important;*/
+}
+.QuickLinksList {                
+    overflow-x: visible;
+    white-space: nowrap;  
+}
+#AddNoteBar {
+    position: fixed;
+    bottom: 0em;
+    padding-bottom: 2em;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+}
+#AddNoteTable {
+    width:100%;
+    height:5em;
+}
+#NoteInputTD {
+    width:90%;
+    padding-right:1em;
+}
+#NoteButtonTD {
+    width:10%;
+}
+#NoteInputContainer {
+    width:100%;
+}
+#NoteContents {
+    width:100%;
+}
+#NoteButton {
+    background-image:url('../Images/send_icon.png');
+    background-size: 40%;
+    background-position:center;
+    width:98%;
+    height:98%;
+}
+/* Increase the background image size while performing action */
+.StatusButton {
+    background-size: 100% !important;
+    background-color: #FFF !important;
+}
+#Results {
+    width:38em;
+    margin-top:12em;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    /* Firefox */
+    height: -moz-calc(100% - 20em);
+    /* WebKit */
+    height: -webkit-calc(100% - 20em);
+    /* Opera */
+    height: -o-calc(100% - 20em);
+    /* Standard */
+    height: calc(100% - 20em);
+    
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%);
+    -ms-transform: translate(-50%); /* IE 9 */
+   	-webkit-transform: translate(-50%); /* Safari */         
+}
+.noteNode {    
+    background: #f1f1f1;    
+    margin-right:1em;
+    margin-bottom:2em;
+    padding:.5em;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+}
+.noteTitle {
+    font-size:1.5em;
+    margin-bottom:.5em;
+    margin-left:.5em;
+    cursor: pointer;
+    font-weight:bold;
+}
+.noteContents {
+    background: #f1f1f1;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+}
+.noteContents td {
+    padding:1em;
+    border-top: 1px solid #ddd;
+}
+.noteEntry {
+    -webkit-border-radius: 2px;
+    border-radius: 2px;       
+}
+.noteEntryFirst td{    
+    border-top: 0px !important;
+}
+.noteTextTD {
+    width:100%;
+}
+.noteText {
+    color:#000;
+    font-size:1.3em;
+    width:18em;
+    min-height:1.3em;
+    word-wrap: break-word;     
+    white-space: pre-wrap;
+}
+.noteEditInput {
+    font-size:1.3em;    
+    width:100% !important;
+}
+.EditActionButtonsContainer {
+    float:right;    
+}
+.DeleteActionButtonContainer {
+    float: left;
+}
+.EditActionButtons input {
+    margin-right: .2em;
+}
+.SaveEditButton {    
+}
+.DeleteNoteButton {
+    background-color:#855454 !important;    
+}
+.CompleteButton {
+    font-size: 1.3em;
+}
+.noteText a {
+    color: #000;
+}
+.noteTimestampTD {
+    width:5em;
+}
+.noteTimestamp {
+    text-align:center;
+    font-size:.8em;
+    z-index:0;
+}
+
+#NoteDisplay {
+    color:#808080;
+    font-size:1em;
+    z-index:100;
+    height:15px;
+    display:inline;
+}
+#NoteStatusMessage {
+    position:absolute;
+    right: 6em;
+}
+#LocationStatusMessage {    
+    position:absolute;
+    left: 1em;
+}
+.locationIcon {      
+    width: auto; 
+    max-width: 12px; 
+    height: auto; 
+    max-height: 12px;
+    padding-right:.3em;
+    opacity: 0.4;
+    filter: alpha(opacity=40); /* For IE8 and earlier */
+}
+
+.NoResultsText {    
+    color:#808080;
+    font-size:20px;
+    padding-top:.5em;
+    text-align:center;
+}
+
+@media only screen and (max-device-width: 480px),
+       (-webkit-min-device-pixel-ratio: 1.5),  
+       (-o-min-device-pixel-ratio: 3/2),  
+       (min--moz-device-pixel-ratio: 1.5),  
+       (min-device-pixel-ratio: 1.5)
+{    
+    #LogoutButton {
+        display:none;
+    }
+    /* override prev styles with defaults */
+    .ClearStyleOnMobile {
+        width: 100% !important;
+        min-width:0em !important;
+    }
+    #SearchBarTable {
+        width: 100%;
+    }
+    #SearchInputTD {
+        width:85%;
+    }
+    #SearchButtonTD {
+        padding-top:.2em;
+        padding-left:.5em;
+        width: 15%;
+    }
+    .QuickLinksList {                
+        overflow-x: auto;      
+        white-space: nowrap;  
+        cursor:pointer;
+    }
+    .InputGroup {
+        width:100% !important;
+    }
+    #Results {
+        margin-top:11em;
+    }
+    #ResultPostPadding {
+        height:6em;
+    }
+    .contractedResults {
+        /* Firefox */
+        height: -moz-calc(100% - 10em) !important;
+        /* WebKit */
+        height: -webkit-calc(100% - 10em) !important;
+        /* Opera */
+        height: -o-calc(100% - 10em) !important;
+        /* Standard */
+        height: calc(100% - 10em) !important;
+    }
+    .expandResults {
+        height: 100% !important;
+    }
+    #NoteContents {                
+        table-layout:fixed;
+        font-size: 1em;
+    }
+    .noteNode {
+        margin-right: 0em;
+    }
+    .noteTitle {
+        font-size:1.2em;
+    }
+    .noteText {
+        width:100%;
+        word-break:break-word;
+        font-size: 1em;
+        cursor:pointer;
+    }
+    .noteEditInput {
+        font-size: 1em;
+    }
+    .NoResultsText {
+        font-size: 1em;
+    }
+    .CompleteButton {
+        font-size: 1em;
+    }
+    .EditActionButtons input {
+        font-size:15px;
+    }
+    #NoteInputTD {
+        width: 85%;
+        padding-right: .5em;
+    }
+    #NoteButtonTD {
+        width: 15%;
+    }
+    #NoteDisplayTD {
+        position: relative;
+        top: -.3em;
+    }
+    #NoteDisplay {
+        font-size: .8em;
+        margin-bottom:.5em;
+        color:#FFF;
+    }
+    #AddNoteBar {
+        bottom: 0em;
+        padding-bottom: .5em;
+        background-color:#0093b4;
+    }
+    #NoteStatusMessage {
+        right: 5%;
+    }
+    /* Invert the location icon colors for mobile */
+    .locationIcon {
+        -webkit-filter: invert(100%); 
+        filter: invert(100%);
+        opacity: 1.0;
+        filter: alpha(opacity=100); /* For IE8 and earlier */
+    }
+}
+
+/* For really small phones */
+@media only screen and (max-device-height: 600px) {
+    textarea {
+        height:4em;
+    }
+    #AddNoteTable {
+        height: inherit;
+    }
+    #SearchBarContainer {
+        height: 9em;
+    }
+    .quickSearchButton {
+        font-size:.8em !important;
+    }
+}
