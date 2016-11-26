@@ -59,7 +59,7 @@ namespace WebRole
         }
         public static async Task SendMail(string email, string subject, string content)
         {          
-            string apiKey = "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";
+            string apiKey = GetConfigValue("SendGridPrivateKey");
             
             dynamic sg = new SendGridAPIClient(apiKey);
 
