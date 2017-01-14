@@ -21,6 +21,18 @@ DisplayTimeBasedTheme();
 // Update theme every 10 sec
 window.setInterval(function () { DisplayTimeBasedTheme() }, 10 * 1000);
 
+// Limit all textarea to MAXNOTELENGTH
+function LimitTextAreaMaxLength() {
+    $(function () {
+        $("textarea").bind('input propertychange', function () {
+            if ($(this).val().length > MAXNOTELENGTH) {
+                $(this).val($(this).val().substring(0, MAXNOTELENGTH));
+            }
+        })
+    });
+}
+LimitTextAreaMaxLength();
+
 function HideNoteInput() {
     if (usingMobileDevice) {
         // make room for mobile keyboard
@@ -904,6 +916,7 @@ function DisplayResults(response, queryContents) {
             MasterViewModel.noteListViewModel.addNote(response[i].RowKey, response[i].EncodedNote, response[i].Timestamp, response[i].Completed);
         }
         //ScrollToBottom();
+        LimitTextAreaMaxLength();
     }
 }
 
@@ -966,7 +979,7 @@ function UpdateSearchBarLocation() {
 }
 
 function DisplayNoteCharactersLeft() {
-    var available = MAXNOTELENGTH - document.getElementById("NoteContents").value.length;
+    var available = document.getElementById("NoteContents").value.length;
     document.getElementById("NoteStatusMessage").innerHTML = available + "/" + MAXNOTELENGTH;
 }
 

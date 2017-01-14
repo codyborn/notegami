@@ -1,5 +1,5 @@
 ﻿// Constants
-var MAXNOTELENGTH = 1000;
+var MAXNOTELENGTH = 10000;
 var UNCATEGORIZEDTAG = "Uncategorized";
 // 550 accounts for the top banner and some padding
 var RESULTSSCROLLBUFFER = 200;

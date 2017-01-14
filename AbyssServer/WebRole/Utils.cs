@@ -76,7 +76,7 @@ namespace WebRole
     {
         public static string DeveloperId = "c1c8b9bc10a6451eba25cf8a2cb07e43";
         public static string UserPartition = "users";
-        public static int MaxNoteLength = 1000;
+        public static int MaxNoteLength = 10000;
         // If you're going to query more than this number of notes,
         // Query all notes for a user and iterate through them on the server-side
         // Profiled using an account with 180 notes
