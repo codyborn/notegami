@@ -64,7 +64,7 @@ input[type=submit] {
     background-size: 60% !important;
 }
 #AppStoreLinks {
-    margin-top:5em;
+    margin-top:2em;
     position: fixed;
     left: 50%;
     /* bring your own prefixes */
@@ -75,6 +75,14 @@ input[type=submit] {
 #AndroidAppLinkIcon {
     width:10em;
     height:auto;
+}
+#WindowsInstallIcon {
+    width:5em;
+    height:auto;
+}
+#AppLinkTable td {
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 @media only screen and (max-device-width: 480px) {

@@ -181,9 +181,11 @@
     <Content Include="Views\Images\Loading_icon.gif" />
     <Content Include="Views\Images\location_icon.svg" />
     <Content Include="Views\Images\mac_app_icon.png" />
+    <Content Include="Views\Images\menu_icon.png" />
     <Content Include="Views\Images\search_icon.png" />
     <Content Include="Views\Images\send_icon.png" />
     <Content Include="Views\Images\splash_icon.png" />
+    <Content Include="Views\Images\windows.png" />
     <Content Include="Views\PasswordReset.html" />
     <Content Include="Views\Scripts\angular.js" />
     <Content Include="Views\Scripts\Common.js" />
@@ -191,6 +193,14 @@
     <Content Include="Views\Scripts\Location.js" />
     <Content Include="Views\Scripts\TakeNote.js" />
     <Content Include="Views\SignUp.html" />
+    <Content Include="Views\Style\images\ui-icons_444444_256x240.png" />
+    <Content Include="Views\Style\images\ui-icons_555555_256x240.png" />
+    <Content Include="Views\Style\images\ui-icons_777620_256x240.png" />
+    <Content Include="Views\Style\images\ui-icons_777777_256x240.png" />
+    <Content Include="Views\Style\images\ui-icons_cc0000_256x240.png" />
+    <Content Include="Views\Style\images\ui-icons_ffffff_256x240.png" />
+    <Content Include="Views\Style\jquery-ui.css" />
+    <Content Include="Views\Style\jquery-ui.theme.css" />
     <Content Include="Views\Style\NightTheme.css" />
     <Content Include="Views\Style\SignUp.css" />
     <Content Include="Views\Style\Style.css" />
@@ -219,6 +229,7 @@
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

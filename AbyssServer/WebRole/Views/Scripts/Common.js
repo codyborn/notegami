@@ -4,7 +4,7 @@ var UNCATEGORIZEDTAG = "Uncategorized";
 // 550 accounts for the top banner and some padding
 var RESULTSSCROLLBUFFER = 200;
 var MAXRECENTTOKENSTODISPLAYFORBROWSER = 7;
-var MAXRECENTTOKENSTODISPLAYFORMOBILE = 30;
+var MAXRECENTTOKENSTODISPLAYFORMOBILE = 15;
 
 /* Browser detection */
 var is_chrome = navigator.userAgent.indexOf('Chrome') > -1;

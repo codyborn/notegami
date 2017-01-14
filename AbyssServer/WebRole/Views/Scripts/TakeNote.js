@@ -176,6 +176,25 @@ function NoteNode(tag) {
     var self = this;
     self.tag = tag;
     self.notes = ko.observableArray();
+    // sort notes first on completed, second on date
+    self.sortedNotes = ko.computed(function () {
+        if (typeof self.notes() == "undefined")
+        {
+            return self.notes();
+        }
+        return self.notes().sort(function (n1, n2) {
+            if (n1.note().completed() && !n2.note().completed()) {
+                return 1;
+            }
+            else if (!n1.note().completed() && n2.note().completed()) {
+                return -1;
+            }
+            else if (new Date(n1.note().timestamp) < new Date(n2.note().timestamp)) {
+                return 1;
+            }
+            return -1;
+        });
+    });
     self.shouldDisplayNode = ko.computed(function () {
         // if there are any notes visible
         var anyVisible = false;
@@ -194,6 +213,32 @@ function NoteNode(tag) {
         }
         return true;
     });
+    this.saveNotePosition = function (elem) {
+        if (elem.nodeType == 1) {
+            elem.saveOffsetTop = elem.offsetTop;
+        }
+    };
+
+    this.moveNote = function (elem) {
+        if (elem.nodeType == 1) {
+            console.log('afterMove(' + elem.innerText + '): ' + elem.saveOffsetTop + ' to ' + elem.offsetTop);
+            if (elem.offsetTop !== elem.saveOffsetTop) {
+                var tempElement = elem.cloneNode(true);
+                $(elem).css({ visibility: 'hidden' });
+                $(tempElement).css({
+                    position: "absolute",
+                    width: window.getComputedStyle(elem).width
+                });
+                elem.parentNode.appendChild(tempElement);
+                $(tempElement)
+                    .css({ top: elem.saveOffsetTop })
+                    .animate({ top: elem.offsetTop }, function () {
+                        $(elem).css({ visibility: 'visible' });
+                        elem.parentNode.removeChild(tempElement);
+                    });
+            }
+        }
+    };
 }
 
 // Data view model
@@ -293,6 +338,16 @@ ko.bindingHandlers.pressAndHold = {
         }
     }
 };
+ko.bindingHandlers.slideIn = {
+    init: function (element, valueAccessor) {
+        var value = ko.utils.unwrapObservable(valueAccessor());
+        $(element).toggle(value);
+    },
+    update: function (element, valueAccessor) {
+        var value = ko.utils.unwrapObservable(valueAccessor());
+        value ? $(element).slideDown() : $(element).slideUp();
+    }
+};
 
 function AddClickListener(element, action) {
     element.addEventListener("mousedown", function (event) {
@@ -345,10 +400,16 @@ var activeAction = QueryNotes;
 // Will be populated by geocoder
 var userCity = "";
 $(document).ready(function () {
-    document.body.addEventListener("onclick", function () { MakeFullScreenOnAction(); });
+    $(function () {
+        $("#MenuList").menu();
+    });
+    document.body.addEventListener("click", function () { MakeFullScreenOnAction(); });
     var cachedResponse = localStorage.getItem("recentTokens");
     if (cachedResponse != null) {
-        DisplayQuickSearchBar(JSON.parse(cachedResponse));
+        var parsedResponse = JSON.parse(cachedResponse);
+        DisplayQuickSearchBar(parsedResponse);
+        PopulateAutoComplete(parsedResponse);
+        PopulateDeleteTagList(parsedResponse);
     }
     if (is_safari) {
         document.getElementById('Results').style.height = ($(document).height() - 320) + "px";
@@ -358,6 +419,10 @@ $(document).ready(function () {
     if (queryStringValue != "" && queryStringValue != null) {
         document.getElementById('QueryContents').value = queryStringValue;
         QueryNotes();
+    }
+    else {
+        DisplayRecentNotesFromCache();
+        QueryRecentNotes();
     }
 });
 
@@ -442,8 +507,15 @@ function CreateNote() {
                     ShowCompletedIcon("NoteButton");
                     document.getElementById("NoteStatusMessage").innerHTML = "Success";
                     // Update the query results
-                    QueryNotes();
+                    if (document.getElementById("QueryContents").value == "") {
+                        // Refresh recent if the query is empty
+                        QueryRecentNotes();
+                    }
+                    else {
+                        QueryNotes();
+                    }
                     QueryRecentTokens();
+                    document.getElementById('NoteContents').focus();
                 }
                 else {
                     HideButtonImage("NoteButton");
@@ -534,9 +606,6 @@ function DeleteNote(noteNodeObj) {
         url: "../note/DeleteNote",
         data: data,
         success: function (response) {
-            if (response == "Success") {
-                noteNodeObj.onSuccessfulDelete();
-            }
             if (response == "Expired") {
                 // Auth token has expired
                 AuthUserAndSetCookie(email, CacheStoreGet("password"),
@@ -546,15 +615,68 @@ function DeleteNote(noteNodeObj) {
                         showError("Please log in to continue");
                     }) // on failure
             }
+            else
+            {
+                if (response == "RefreshRecent")
+                {
+                    QueryRecentTokens();
+                }
+                noteNodeObj.onSuccessfulDelete();
+            }
             HideButtonImageByClassName("DeleteNoteButton");
         }
     });
 }
 
-function QueryNotes() {
-    var queryContents = document.getElementById("QueryContents").value;
+function QueryRecentNotes() {
+    var today = new Date();
+    var yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    var lastWeek = new Date();
+    lastWeek.setDate(today.getDate() - 7);
+    QueryNotes(DateToString(today) + "-" + DateToString(lastWeek), CacheAndDisplayRecentNotes);
+}
+
+// Only update display if the notes are different
+// Store latest response in cache
+function CacheAndDisplayRecentNotes(response) {
+    var cachedResponse = localStorage.getItem("recentNotes");    
+    if (cachedResponse != null) {
+        var parsedResponse = JSON.parse(cachedResponse);
+        // equivalence check
+        if (parsedResponse.length == response.Notes.length) {
+            for (var i = 0; i < parsedResponse.length; i++) {
+                if (parsedResponse[i].RowKey == response.Notes[i].RowKey && 
+                    parsedResponse[i].Timestamp == response.Notes[i].Timestamp) {
+                    return;
+                }
+            }   
+        }
+    }
+    localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
+    DisplayResults(response.Notes);
+}
+
+// Allows for quickly grabbing the most recent notes from the local cache
+function DisplayRecentNotesFromCache() {
+    var cachedResponse = localStorage.getItem("recentNotes");
+    if (cachedResponse != null) {
+        var parsedResponse = JSON.parse(cachedResponse);
+        DisplayResults(parsedResponse);
+    }
+}
+
+function QueryNotes(queryContents, callBackOnSuccess) {
+    var fromUserInput = false;
+    if (typeof queryContents == "undefined") {
+        queryContents = document.getElementById("QueryContents").value;
+        fromUserInput = true;
+    }
+    
     if (queryContents != "") {
-        ShowLoading("QueryButton");
+        if (fromUserInput) {
+            ShowLoading("QueryButton");
+        }
         var email = CacheStoreGet("email");
         var authToken = CacheStoreGet("token");
         var data =
@@ -569,13 +691,18 @@ function QueryNotes() {
             data: data,
             success: function (response) {
                 if (response.Status == "Success") {
-                    MasterViewModel.noteListViewModel.queryOccurred(true);
-                    DisplayResults(response.Notes, queryContents);
+                    if (typeof callBackOnSuccess == "undefined") {                        
+                        MasterViewModel.noteListViewModel.queryOccurred(true);
+                        DisplayResults(response.Notes, queryContents);
+                    }
+                    else {
+                        callBackOnSuccess(response);
+                    }
                 }
                 else if (response.Status == "Expired") {
                     // Auth token has expired
                     AuthUserAndSetCookie(email, CacheStoreGet("password"),
-                            function () { QueryNotes(); }, // on success
+                            function () { QueryNotes(queryContents, callBackOnSuccess); }, // on success
                             function () {
                                 Redirect('Signup.html');
                                 showError("Please log in to continue");
@@ -603,10 +730,83 @@ function QueryRecentTokens() {
         success: function (response) {
             if (response != null) {
                 localStorage.setItem("recentTokens", JSON.stringify(response));
+                DisplayQuickSearchBar(response);
+                PopulateAutoComplete(response);
+                PopulateDeleteTagList(response);
             }
-            DisplayQuickSearchBar(response);
         }
     });
+}
+
+
+// Deletes recent token and reloads controls
+function DeleteRecentTokens(token) {
+    var email = CacheStoreGet("email");
+    var authToken = CacheStoreGet("token");
+    var data =
+        {
+            Email: email,
+            AuthToken: authToken,
+            Token: token
+        };
+    $.ajax({
+        type: "POST",
+        url: "../note/DeleteRecentToken",
+        data: data,
+        success: function (response) {
+            if (response != null) {
+                localStorage.setItem("recentTokens", JSON.stringify(response));
+                DisplayQuickSearchBar(response);
+                PopulateAutoComplete(response);
+                PopulateDeleteTagList(response);
+            }
+        }
+    });
+}
+
+function PopulateAutoComplete(response) {
+    
+    if (response != null) {
+        var tagsAndLocations = response["tags"].concat(response["locations"]);
+        AddWordsToInputAutoComplete(tagsAndLocations, "QueryContents");
+        AddWordsToInputAutoComplete(response["tags"], "NoteContents");
+    }
+}
+
+function PopulateDeleteTagList(response) {
+    if (response != null) {
+        for (var i = 0; i < response["tags"].length; i++) {
+            AddHashtagToMenu(response["tags"][i])
+        }
+        $(function () {
+            $("#MenuList").menu("refresh");
+        });
+    }
+}
+
+function split(val) {
+    return val.split(/\s*/);
+}
+function extractLast(term) {
+    return split(term).pop();
+}
+function AddWordsToInputAutoComplete(wordBag, targetIndex) {
+    $("#" + targetIndex).textcomplete([
+    {
+        words: wordBag,
+        match: /(#?\w+)$/,
+        search: function (term, callback) {
+            callback($.map(this.words, function (word) {
+                return word.indexOf(term) === 0 || word.indexOf(term) === 1 ? word : null;
+            }));
+        },
+        index: 1,
+        replace: function (word) {
+            return word + ' ';
+        }
+    }
+    ]);
+    
 }
 
 function DisplayQuickSearchBar(response) {
@@ -636,13 +836,13 @@ function DisplayQuickSearchBar(response) {
         quickSearchContainer.appendChild(hashtagList);
 
         // Add location links
-        var locationList = document.createElement('div');
-        locationList.classList.add("QuickLinksList");
-        locationList.classList.add("noselect");
-        for (var i = 0; i < Math.min(response["location"].length, recentTokenDisplayCount) ; i++) {
-            locationList.appendChild(CreateQuickSearchButton(response["location"][i]));
-        }
-        quickSearchContainer.appendChild(locationList);
+        //var locationList = document.createElement('div');
+        //locationList.classList.add("QuickLinksList");
+        //locationList.classList.add("noselect");
+        //for (var i = 0; i < Math.min(response["locations"].length, recentTokenDisplayCount) ; i++) {
+        //    locationList.appendChild(CreateQuickSearchButton(response["locations"][i]));
+        //}
+        //quickSearchContainer.appendChild(locationList);
     }
 }
 
@@ -678,6 +878,7 @@ function CreateQuickSearchButton(text, addToNote, searchFor) {
                     document.getElementById('NoteContents').value += " ";
                 }
                 document.getElementById('NoteContents').value += searchFor + " ";
+                document.getElementById('NoteContents').focus();
             }
         }
         return false; /* prevent context menu from popping up */
@@ -785,4 +986,30 @@ function DisplayCity(city) {
 function PreventFOUC() {
     document.getElementById('Results').style.display = "inline";
     document.getElementById('NoteContents').value = "";
+}
+
+/* Menu Controls */
+function ToggleMenu() {
+    var menuList = document.getElementById('MenuListContainer');
+    if (menuList.style.display == "none") {
+        menuList.style.display = "inline";
+    }
+    else {
+        menuList.style.display = "none";
+    }
+}
+
+function AddHashtagToMenu(tag) {
+    var deleteTagList = document.getElementById('DeleteTagList');
+    var deleteTagLI = document.createElement('li');
+    var deleteTagDIV = document.createElement('div');
+    deleteTagLI.appendChild(deleteTagDIV);
+    deleteTagLI.addEventListener("click", function () { DeleteRecentTokens(tag); });
+    deleteTagDIV.innerHTML = tag;
+    deleteTagList.appendChild(deleteTagLI);
+}
+
+function LeaveFeedback() {
+    document.getElementById('NoteContents').value = "#feedback ";
+    document.getElementById('NoteContents').focus();
 }

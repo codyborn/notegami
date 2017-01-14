@@ -23,6 +23,9 @@
     <!-- normal script imports etc  -->
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC59W4ZXQtRg9I6ITSgMvVG91flEwOMlgg"></script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.textcomplete/1.8.0/jquery.textcomplete.min.js"></script>
+    <link rel="stylesheet" href="Style/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="Scripts/Common.js"></script>
     <script src="Scripts/Location.js"></script>
 
@@ -33,16 +36,32 @@
 
     </script>
     <link rel="stylesheet" type="text/css" href="Style/Style.css">
-    <link rel="stylesheet" type="text/css" href="Style/TakeNote.css">    
+    <link rel="stylesheet" type="text/css" href="Style/TakeNote.css">
     
 </head>
-<body onload="CheckAuthCookie(); GeoCoderInit(); PreventFOUC(); DisplayNoteCharactersLeft();">    
-    <input id="LogoutButton" type="submit" onclick="LogOut()" value="Log Out" />
+<body onload="CheckAuthCookie(); GeoCoderInit(); PreventFOUC(); DisplayNoteCharactersLeft();">        
     <div id="WorkingArea" class="ClearStyleOnMobile">
         <div id="SearchBarContainer" class="InputGroup ClearStyleOnMobile" onkeyup="PerformActionIfReturn(event)">            
             <div id="SearchBar" class="InputGroup ClearStyleOnMobile">
                 <table id="SearchBarTable">
                     <tr>
+                        <td id="MenuContainer">
+                            <input type="submit" id="MenuButton" onclick="ToggleMenu()" value="" />
+                            <div id="MenuListContainer" style="display:none;">
+                                <ol id="MenuList">
+                                    <li onclick="LogOut()">
+                                        <div>Log Out</div>
+                                    </li>
+                                    <li>
+                                        <div>Delete Hashtags</div>
+                                        <ul id="DeleteTagList" style="max-height:20em;overflow-y:scroll"></ul>
+                                    </li>
+                                    <li onclick="LeaveFeedback()">
+                                        <div>Leave Feedback</div>
+                                    </li>
+                                </ol>
+                            </div>
+                        </td>
                         <td id="SearchInputTD">
                             <input type="text" id="QueryContents" placeholder="Search" />
                         </td>
@@ -56,19 +75,22 @@
         </div>
         <div id="Results" class="contractedResults ClearStyleOnMobile" onscroll="UpdateSearchBarLocation()" style="display:none;">
             <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noteNodes().length == 0 && $root.noteListViewModel.queryOccurred())">No results matched</div>
-            <div class="NoResultsText noselect" data-bind="visible: !$root.noteListViewModel.queryOccurred()">Search for something to see your notes</div>
+            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noteNodes().length == 0 && !$root.noteListViewModel.queryOccurred())">Search for something to see your notes</div>
             <span data-bind="foreach: $root.noteListViewModel.noteNodes, visible: $root.noteListViewModel.noteNodes().length > 0">
-                <div class="noteNode" data-bind="visible: shouldDisplayNode()">
+                <div class="noteNode" data-bind="slideIn: shouldDisplayNode()">
                     <div class="noteTitle" data-bind="click: $root.noteListViewModel.queryTag, text: tag"></div>
                     <table class="noteContents">
-                        <tbody data-bind="foreach: notes">
-                            <tr class="noteEntry" data-bind="visible: shouldBeVisible()">
+                        <!-- Template allows for sorting animation -->
+                        <tbody data-bind="template: {foreach: sortedNotes,
+                                                    beforeMove: saveNotePosition,
+                                                    afterMove: moveNote}">
+                            <tr class="noteEntry" data-bind="visible: shouldBeVisible(), css: { completedNoteNode: note().completed() }">
                                 <td class="noteTextTD">
-                                    <div class="noteText noselect" data-bind="visible: !editingNote(), html: formattedText(), css: { strikeThrough: note().completed() }, pressAndHold: pressAndHoldAction">
+                                    <div class="noteText noselect" data-bind="visible: !editingNote(), html: formattedText(), css: { completedNoteNode: note().completed() }, pressAndHold: pressAndHoldAction">
                                     </div>
                                     <div data-bind="visible: editingNote()">
                                         <!-- If you change this structure, update the focus() path in TakeNote.js -->
-                                        <textarea type="text" class="noteEditInput" maxlength="1000" data-bind="textInput: note().contents, hasfocus: note().contents.focused, css: { strikeThrough: note().completed() }" onfocus="HideNoteInput()" onblur="DisplayNoteInput()"></textarea>                                        
+                                        <textarea type="text" class="noteEditInput" maxlength="1000" data-bind="textInput: note().contents, hasfocus: note().contents.focused, css: { completedNoteNode: note().completed() }" onfocus="HideNoteInput()" onblur="DisplayNoteInput()"></textarea>
                                     </div>
                                 </td>
                                 <td class="noteTimestampTD">

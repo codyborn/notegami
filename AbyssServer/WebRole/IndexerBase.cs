@@ -34,6 +34,11 @@ namespace WebRole
             string encodedToken = HttpUtility.UrlEncode(token.ToLowerInvariant());
             return string.Format("{0}_{1}", GetRowKeyPrefix(), encodedToken);
         }
+        public virtual string GetTokenFromRowKey(string rowKey)
+        {
+            string encodedToken = rowKey.Replace(string.Format("{0}_", GetRowKeyPrefix()), string.Empty);
+            return HttpUtility.UrlDecode(encodedToken);
+        }
         public virtual string GetRecentTokenRowKey()
         {
             return string.Format("{0}_r", GetRowKeyPrefix());
@@ -74,7 +79,6 @@ namespace WebRole
             }
             return index;
         }
-
 
         public virtual void RemoveNote(string userId, string token, string noteKey)
         {
@@ -170,6 +174,25 @@ namespace WebRole
             select pair.Key;
         }
 
+        public IEnumerable<string> DeleteRecentToken(string userId, string token)
+        {
+            if (!ShouldTrackRecent())
+            {
+                throw new NotImplementedException("Not tracking token history for this index type");
+            }
+            string rowKey = GetRecentTokenRowKey();
+            RecentTokenList recentTokenList;
+            if (!TableStore.Get<RecentTokenList>(TableStore.TableName.recentTokens, userId, rowKey, out recentTokenList))
+            {
+                return null;
+            }
+            recentTokenList.Remove(token);
+            TableStore.Update(TableStore.TableName.recentTokens, recentTokenList);
+
+            return from pair in recentTokenList.UsageHistory
+                   orderby pair.Value.Count() descending
+                   select pair.Key;
+        }
 
         public static IEnumerable<Note> QueryNotes(string userId, string queryContents)
         {
@@ -296,16 +319,18 @@ namespace WebRole
         /// </summary>
         /// <param name="userId"></param>
         /// <param name="noteKey"></param>
-        /// <returns></returns>
-        public static bool DeleteNote(string userId, string noteKey)
+        /// <param name="recentTokensUpdated">true if delete caused an update to recent token list</param>
+        /// <returns>true if successfully deleted</returns>
+        public static bool DeleteNote(string userId, string noteKey, out bool recentTokensUpdated)
         {
             // If note doesn't exist, fail
+            recentTokensUpdated = false;
             Note retrievedNote = null;
             if (!TableStore.Get<Note>(TableStore.TableName.notes, userId, noteKey, out retrievedNote))
             {
                 return false;
             }
-            RemoveAllIndices(retrievedNote, userId);
+            RemoveAllIndices(retrievedNote, userId, out recentTokensUpdated);
             
             TableStore.Delete(TableStore.TableName.notes, retrievedNote);
             return true;
@@ -323,7 +348,7 @@ namespace WebRole
             
             if (!string.IsNullOrEmpty(location))
             {
-                insertUpdateList.Add(new LocationIndexer().AddNote(userId, "@" + location, note, true, recentTokenLists));
+                insertUpdateList.Add(new LocationIndexer().AddNote(userId, location, note, true, recentTokenLists));
             }
             insertUpdateList.Add(new DateIndexer().AddNote(userId, timestamp.ToString("yyyy/MM/dd"), note, true, recentTokenLists));
             IEnumerable uniqueTokens = GetDistinctTokens(noteContents);
@@ -380,8 +405,9 @@ namespace WebRole
             }
             TableStore.BatchInsertOrUpdate(TableStore.TableName.indices, updateList);
         }
-        public static void RemoveAllIndices(Note note, string userId)
+        public static void RemoveAllIndices(Note note, string userId, out bool recentTokensUpdated)
         {
+            recentTokensUpdated = false;
             if (note.Indices == null)
             {
                 return;
@@ -393,6 +419,18 @@ namespace WebRole
                 if (update != null)
                 {
                     updateList.Add(update);
+                    // If the hashtag has no more notes associated, remove from recents
+                    if (index.Type == IndexType.HashTag)
+                    {
+                        string token = new HashTagIndexer().GetTokenFromRowKey(index.IndexKey);
+                        IEnumerable<string> notes = new HashTagIndexer().QueryNoteKeys(userId, token);
+                        // last one
+                        if (notes.Count() == 1)
+                        {
+                            new HashTagIndexer().DeleteRecentToken(userId, token);
+                            recentTokensUpdated = true;
+                        }
+                    }
                 }
             }
             TableStore.BatchInsertOrUpdate(TableStore.TableName.indices, updateList);
@@ -420,11 +458,6 @@ namespace WebRole
                     queryIndexKeys.Add(new HashTagIndexer().GetRowKey(token));
                     continue; // index membership is disjoint
                 }
-                else if (new LocationIndexer().IsMember(token))
-                {
-                    queryIndexKeys.Add(new LocationIndexer().GetRowKey(token));
-                    continue; // index membership is disjoint
-                }
                 else if (new DateIndexer().IsMember(token))
                 {
                     queryIndexKeys.Add(new DateIndexer().GetRowKey(token));
@@ -439,6 +472,9 @@ namespace WebRole
                 }
                 else
                 {
+                    // Allow user to forget to add '#' when querying hashtags
+                    queryIndexKeys.Add(new HashTagIndexer().GetRowKey("#"+token));
+
                     // Word is always the default token
                     queryIndexKeys.Add(new WordIndexer().GetRowKey(token));
                 }
@@ -491,11 +527,6 @@ namespace WebRole
                         }
                     }
                 }
-                // if any of the query keys were not found
-                if (queryResults.Count < queryIndexKeysCount)
-                {
-                    return new HashSet<string>();
-                }
             }
 
             // Find the intersection of each query
@@ -508,7 +539,7 @@ namespace WebRole
             .Skip(1)
             .Aggregate(
                 new HashSet<string>(queryResults.First()),
-                (h, e) => { h.IntersectWith(e); return h; }
+                (h, e) => { h.UnionWith(e); return h; }
             );
             return intersection;
         }
@@ -516,7 +547,7 @@ namespace WebRole
         public static Dictionary<string, IEnumerable<string>> GetAllRecentTokens(string userId)
         {
             Dictionary<string, IEnumerable<string>> tokens = new Dictionary<string, IEnumerable<string>>();
-            tokens["location"] = new LocationIndexer().GetRecentTokens(userId);
+            tokens["locations"] = new LocationIndexer().GetRecentTokens(userId);
             tokens["tags"] = new HashTagIndexer().GetRecentTokens(userId);
             return tokens;
         }
@@ -564,7 +595,7 @@ namespace WebRole
 
     /// <summary>
     /// Indexer for city note was written
-    /// Ex. "@Seattle"
+    /// Ex. "Seattle"
     /// </summary>
     public class LocationIndexer : IndexerBase
     {
@@ -572,14 +603,15 @@ namespace WebRole
         {
             return true;
         }
+        // Insert the location as a word, to prevent need for special characters to query location
         protected override IndexType GetIndexType()
         {
-            return IndexType.Loc;
+            return IndexType.Word;
         }
 
         public override bool IsMember(string token)
         {
-            return token.StartsWith("@");
+            throw new NotImplementedException("LocationIndexer does not have special members");
         }        
     }
 

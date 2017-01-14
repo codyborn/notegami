@@ -153,6 +153,7 @@
 		    document.getElementById('LoginLink').style.display = "block";
 		    document.getElementById('password').style.display = "block";
 		    document.getElementById('ActionChangeLinks').style.display = "block";
+		    document.getElementById('AppStoreLinks').style.display = "block";
 		    document.getElementById('email').title = "Only to be used for account recovery. Never a correspondence. Ever.";
 		    document.getElementById('password').title = "Encrypted using sha-256";
 		    showError("");
@@ -168,6 +169,7 @@
 		    document.getElementById('SignupLink').style.display = "block";
 		    document.getElementById('password').style.display = "block";
 		    document.getElementById('ActionChangeLinks').style.display = "block";
+		    document.getElementById('AppStoreLinks').style.display = "block";
 		    document.getElementById('email').title = "";
 		    document.getElementById('password').title = "";
 		    showError("");
@@ -181,6 +183,7 @@
 		    document.getElementById('SignupLink').style.display = "none";
 		    document.getElementById('password').style.display = "none";
 		    document.getElementById('ActionChangeLinks').style.display = "none";
+		    document.getElementById('AppStoreLinks').style.display = "none";
 		    
 		    document.getElementById('ResetPasswordTitle').style.display = "block";
 		    document.getElementById('PWResetButton').style.display = "block";
@@ -217,7 +220,11 @@
             <div id="ForgotPWLink"><a href="#" onclick="DisplayPWReset()">Forgot Password?</a></div>            
         </div>
         <div id="AppStoreLinks">
-            <a href='https://play.google.com/store/apps/details?id=com.NotegamiAndroid.NotegamiAndroid&utm_source=global_co&utm_medium=prtnr&utm_content=Mar2515&utm_campaign=PartBadge&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img id="AndroidAppLinkIcon" alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' /></a>           
+            <table id="AppLinkTable">
+                <tr><td>
+                    <a href='https://play.google.com/store/apps/details?id=com.NotegamiAndroid.NotegamiAndroid&utm_source=global_co&utm_medium=prtnr&utm_content=Mar2515&utm_campaign=PartBadge&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img id="AndroidAppLinkIcon" alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' /></a>
+                </td></tr>
+            </table>
         </div>
     </div>
 </body>

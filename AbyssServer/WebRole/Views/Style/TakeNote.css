@@ -34,13 +34,29 @@ textarea {
     height:5em;
 }
 
-#LogoutButton {    
-    position: absolute;
-    top: 0em;
-    right:1em;
-    -webkit-border-radius: 0px 0px 2px 2px;
-    border-radius: 0px 0px 2px 2px;
+#MenuContainer {    
+    position: relative;    
+    padding-left:.5em;    
     z-index:100;
+    font-family: Arial,Helvetica,sans-serif;    
+    height:100%;
+}
+
+#MenuButton {
+    background-image:url('../Images/menu_icon.png');
+    background-size: 60%;
+    background-position:center;
+    width:2em;
+    height:2em;
+}
+
+#MenuListContainer {
+    position:absolute;
+    top:2.5em;
+}
+#MenuListContainer li {
+    padding:.2em;
+    width:9em;
 }
 
 .InputGroup {
@@ -52,29 +68,30 @@ textarea {
    	-webkit-transform: translate(-50%); /* Safari */
 }
 #SearchBarContainer {
-    width:100em;
-    height:10.3em;
+    width:100%;
+    height:9em;
     background: #0093b4;
     z-index:99;
     position:absolute;
 }
 #SearchBar {
-    background: #0093b4;
-    height: 9em;
+    background: #0093b4;    
     padding-top:.5em;
 }    
-#SearchBarTable {
-    width:98%;
+#SearchBarTable {    
     height:2em;
 }
 #SearchInputTD {
     width:90%;
+    padding-right:1em;
 }
 #SearchButtonTD {
     width:10%;
 }
 #QueryContents {
-    width: 98%;
+    margin-left:1em;
+    width: 99%;
+    height:100%;
 }
 #QueryButton {
     background-image:url('../Images/search_icon.png');
@@ -82,11 +99,13 @@ textarea {
     background-position:center;
     width:100%;
     height:100%;
+    margin-left:.1em;
+    margin-top:.1em;
 }
 #QuickSearchContainer {    
 }
 .quickSearchButton {
-    font-size: 15px !important;
+    font-size: 1.1em !important;
     margin: .5em 0em 0em .5em;
     outline: none;
     /*background-color:#b48800 !important;*/
@@ -158,6 +177,9 @@ textarea {
     padding:.5em;
     -webkit-border-radius: 5px;
     border-radius: 5px;
+}
+.completedNoteNode {
+    color: #d3d1d1 !important;
 }
 .noteTitle {
     font-size:1.5em;
@@ -264,8 +286,9 @@ textarea {
        (min--moz-device-pixel-ratio: 1.5),  
        (min-device-pixel-ratio: 1.5)
 {    
-    #LogoutButton {
-        display:none;
+    #MenuContainer
+     {
+        
     }
     /* override prev styles with defaults */
     .ClearStyleOnMobile {
@@ -380,9 +403,9 @@ textarea {
         height: inherit;
     }
     #SearchBarContainer {
-        height: 9em;
+        height: 8em;
     }
     .quickSearchButton {
-        font-size:.8em !important;
+        font-size:.9em !important;
     }
 }

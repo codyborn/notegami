@@ -51,15 +51,32 @@ namespace WebRole.Controllers
                         return response;
                     }
                     user.Init();
-                    user.EncryptPassword();
                     User retrievedUser;
                     if (TableStore.Get<User>(TableStore.TableName.users, user.PartitionKey, user.Email, out retrievedUser))
                     {
-                        request.response = RequestTracker.RequestResponse.UserError;
-                        response.Error = "User already exists";
-                        return response;
+                        if (!retrievedUser.AuthCheck(user.Password))
+                        {
+                            // User exists and pw is wrong
+                            request.response = RequestTracker.RequestResponse.UserError;
+                            response.Error = "User already exists";
+                            return response;
+                        }
+                        else
+                        {
+                            // Just let user login
+                            // Generate temporary auth token
+                            string loginToken = retrievedUser.GetAuthToken();
+                            // Store with updated auth table
+                            TableStore.Update(TableStore.TableName.users, retrievedUser);
+                            request.response = RequestTracker.RequestResponse.LoginOnSignup;
+
+                            response.Token = loginToken;
+                            response.Error = "Success";
+                            return response;
+                        }
                     }
 
+                    user.EncryptPassword();
                     user.SignupDate = DateTime.UtcNow;
                     // Generate temporary auth token
                     string token = user.GetAuthToken();
@@ -173,7 +190,8 @@ namespace WebRole.Controllers
                     // Send email
                     Utils.SendMail(user.Email,
                                   "Notegami.com Password Reset",
-                                  string.Format("Please navigate to </br>http://notegami.com/views/passwordreset.html?email={0}&token={1} </br>to create your new password.",
+                                  string.Format(@"<p>Please use this link to create your new password.</p>
+                                                  <a href='http://notegami.com/views/passwordreset.html?email={0}&token={1}'>Create Password</a>",
                                   user.Email, resetToken.Item1)).Wait();
 
                     return "Success";

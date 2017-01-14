@@ -46,6 +46,12 @@ namespace WebRole.Controllers
             public string Email { get; set; }
             public string AuthToken { get; set; }
         }
+        public class DeleteRecentTokenAction
+        {
+            public string Email { get; set; }
+            public string AuthToken { get; set; }
+            public string Token { get; set; }
+        }
 
         [HttpPost]
         public string CreateNote([FromBody]CreateNoteAction createNote)
@@ -163,7 +169,12 @@ namespace WebRole.Controllers
                         // Expired AuthToken
                         return "Expired";
                     }
-                    IndexerBase.DeleteNote(userId, deleteNote.RowKey);
+                    bool recentTokensUpdated;
+                    IndexerBase.DeleteNote(userId, deleteNote.RowKey, out recentTokensUpdated);
+                    if (recentTokensUpdated)
+                    {
+                        return "RefreshRecent";
+                    }
                     return "Success";
                 }
                 catch (Exception e)
@@ -229,6 +240,26 @@ namespace WebRole.Controllers
                 // Expired AuthToken
                 return null;
             }
+            return IndexerBase.GetAllRecentTokens(userId);
+        }
+
+        [HttpPost]
+        public Dictionary<string, IEnumerable<string>> DeleteRecentToken([FromBody]DeleteRecentTokenAction deleteRecentTokenRequest)
+        {
+            if (string.IsNullOrEmpty(deleteRecentTokenRequest.Email) ||
+                string.IsNullOrEmpty(deleteRecentTokenRequest.AuthToken) ||
+                string.IsNullOrEmpty(deleteRecentTokenRequest.Token))
+            {
+                return null;
+            }
+            // Use the email and authToken to get the userId
+            string userId = UserController.GetUserId(deleteRecentTokenRequest.Email, deleteRecentTokenRequest.AuthToken);
+            if (string.IsNullOrEmpty(userId))
+            {
+                // Expired AuthToken
+                return null;
+            }
+            new HashTagIndexer().DeleteRecentToken(userId, deleteRecentTokenRequest.Token);
             return IndexerBase.GetAllRecentTokens(userId);
         }
     }

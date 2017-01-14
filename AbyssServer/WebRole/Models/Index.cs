@@ -67,6 +67,24 @@ namespace WebRole.Models
                 TokenCount--;
             }
         }
+        public bool Remove(string token)
+        {
+            if(UsageHistory.Remove(token))
+            {
+                Queue<string> newQueue = new Queue<string>();
+                foreach(string workingToken in ExpiryQueue)
+                {
+                    if (workingToken != token)
+                    {
+                        newQueue.Enqueue(workingToken);
+                    }
+                }
+                ExpiryQueue = newQueue;
+                TokenCount--;
+                return true;
+            }
+            return false;
+        }
     }
     public class RecentToken
     {

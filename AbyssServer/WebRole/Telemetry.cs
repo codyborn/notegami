@@ -19,7 +19,7 @@ namespace WebRole
             _requestName = requestName;
             // Operation Id and Name are attached to all telemetry and help you identify
             // telemetry associated with one request:
-            telemetry.Context.Operation.Id = id;
+            telemetry.Context.Operation.Id = id.ToLowerInvariant();
             telemetry.Context.Operation.Name = _requestName;
 
             _stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -37,7 +37,8 @@ namespace WebRole
         {
             Success = 200,
             UserError,
-            ServerError
+            ServerError,
+            LoginOnSignup
         }
     }
 
