@@ -9,6 +9,10 @@ AbyssServer/TestResults/
 AbyssServer/ecf/
 AbyssServer/rcf/
 AbyssServer/packages/
+AbyssServer/Certificates/
+AbyssTest/obj/
+AbyssTest/bin/
+AbyssTest/.vs/
 
 # Ignore files containing secrets
 AbyssServer/ServiceConfiguration.*.cscfg

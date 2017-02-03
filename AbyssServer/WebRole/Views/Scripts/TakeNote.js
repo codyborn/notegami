@@ -3,23 +3,55 @@ if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
     usingMobileDevice = true;
 }
 
+currTheme = "day";
 // if it's night, load night theme
 function DisplayTimeBasedTheme() {
     var currHour = new Date().getHours();
     if (currHour < 5 || currHour > 20) {
-        if (typeof $('link[title=NightTheme]')[0] == "undefined") {
-            $('head').append('<link rel="stylesheet" href="Style/NightTheme.css" type="text/css" title="NightTheme" />');
+        if (currTheme == "day") {
+            if (typeof $('link[title=NightTheme]')[0] == "undefined") {
+                $('head').append('<link rel="stylesheet" href="Style/NightTheme.css" type="text/css" title="NightTheme" />');
+            }
+            else {
+                $('link[title=NightTheme]')[0].disabled = false;
+            }
         }
+        currTheme = "night";
     }
     else {
-        if (typeof $('link[title=NightTheme]')[0] != "undefined") {
+        if (currTheme == "night") {
             $('link[title=NightTheme]')[0].disabled = true;
         }
+        currTheme = "day";
     }
 }
 DisplayTimeBasedTheme();
-// Update theme every 10 sec
-window.setInterval(function () { DisplayTimeBasedTheme() }, 10 * 1000);
+// Update theme every 60 sec
+var themeClock = window.setInterval(function () { DisplayTimeBasedTheme() }, 60 * 1000);
+
+var showDownConverter = new showdown.Converter({
+    tasklists: 'true',
+    simplifiedAutoLink: 'true',
+    strikethrough: 'true',
+    disableForced4SpacesIndentedSublists: 'true'
+});
+
+function ToggleNightmode() {
+    window.clearInterval(themeClock);
+    if (currTheme == "day") {
+        if (typeof $('link[title=NightTheme]')[0] == "undefined") {
+            $('head').append('<link rel="stylesheet" href="Style/NightTheme.css" type="text/css" title="NightTheme" />');
+        }
+        else {
+            $('link[title=NightTheme]')[0].disabled = false;
+        }
+        currTheme = "night";
+    }
+    else {
+        $('link[title=NightTheme]')[0].disabled = true;
+        currTheme = "day";
+    }
+}
 
 // Limit all textarea to MAXNOTELENGTH
 function LimitTextAreaMaxLength() {
@@ -79,7 +111,11 @@ function NoteFacade(note, currentTag) {
     });
     self.formattedText = ko.computed(function () {
         var taglessNote = ReplaceThisTagWithNothing(self.note().contents(), currentTag);
-        return ReplaceHashtagsWithQuickLinks(taglessNote).trim();
+        taglessNote = ReplaceHashtagsWithQuickLinks(taglessNote).trim();        
+        return showDownConverter.makeHtml(taglessNote);
+    });
+    self.smallerFont = ko.computed(function () {
+        return self.formattedText().length > LARGEFONTMAXLENGTH;
     });
     self.editingNote = ko.observable(false);
     self.pressAndHoldAction = function (noteFacade, evt) {        
@@ -233,7 +269,7 @@ function NoteNode(tag) {
 
     this.moveNote = function (elem) {
         if (elem.nodeType == 1) {
-            console.log('afterMove(' + elem.innerText + '): ' + elem.saveOffsetTop + ' to ' + elem.offsetTop);
+            console.log('afterMove(' + elem.textContent + '): ' + elem.saveOffsetTop + ' to ' + elem.offsetTop);
             if (elem.offsetTop !== elem.saveOffsetTop) {
                 var tempElement = elem.cloneNode(true);
                 $(elem).css({ visibility: 'hidden' });
@@ -362,9 +398,9 @@ ko.bindingHandlers.slideIn = {
 };
 
 function AddClickListener(element, action) {
-    element.addEventListener("mousedown", function (event) {
+    element.addEventListener("click", function (event) {
         // Prevent default behavior
-        event.preventDefault();
+        //event.preventDefault();
         action(event);
     });
 }
@@ -421,7 +457,6 @@ $(document).ready(function () {
         var parsedResponse = JSON.parse(cachedResponse);
         DisplayQuickSearchBar(parsedResponse);
         PopulateAutoComplete(parsedResponse);
-        PopulateDeleteTagList(parsedResponse);
     }
     if (is_safari) {
         document.getElementById('Results').style.height = ($(document).height() - 320) + "px";
@@ -655,18 +690,32 @@ function CacheAndDisplayRecentNotes(response) {
     var cachedResponse = localStorage.getItem("recentNotes");    
     if (cachedResponse != null) {
         var parsedResponse = JSON.parse(cachedResponse);
-        // equivalence check
-        if (parsedResponse.length == response.Notes.length) {
-            for (var i = 0; i < parsedResponse.length; i++) {
-                if (parsedResponse[i].RowKey == response.Notes[i].RowKey && 
-                    parsedResponse[i].Timestamp == response.Notes[i].Timestamp) {
-                    return;
-                }
-            }   
+        // equivalence check        
+        if (parsedResponse.length != response.Notes.length) {
+            localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
+            DisplayResults(response.Notes);
+            return;
         }
+        for (var i = 0; i < parsedResponse.length; i++) {
+            if (parsedResponse[i].RowKey != response.Notes[i].RowKey ||
+                parsedResponse[i].Timestamp != response.Notes[i].Timestamp) {
+                localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
+                DisplayResults(response.Notes);
+                return;
+            }
+        }        
     }
-    localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
-    DisplayResults(response.Notes);
+    else {
+        localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
+        DisplayResults(response.Notes);
+    }
+}
+
+function SearchCachedNotes() {
+    var queryContents = document.getElementById('QueryContents').value;
+    if (queryContents.length > 3) {
+
+    }
 }
 
 // Allows for quickly grabbing the most recent notes from the local cache
@@ -744,7 +793,6 @@ function QueryRecentTokens() {
                 localStorage.setItem("recentTokens", JSON.stringify(response));
                 DisplayQuickSearchBar(response);
                 PopulateAutoComplete(response);
-                PopulateDeleteTagList(response);
             }
         }
     });
@@ -770,7 +818,6 @@ function DeleteRecentTokens(token) {
                 localStorage.setItem("recentTokens", JSON.stringify(response));
                 DisplayQuickSearchBar(response);
                 PopulateAutoComplete(response);
-                PopulateDeleteTagList(response);
             }
         }
     });
@@ -785,17 +832,6 @@ function PopulateAutoComplete(response) {
     }
 }
 
-function PopulateDeleteTagList(response) {
-    if (response != null) {
-        for (var i = 0; i < response["tags"].length; i++) {
-            AddHashtagToMenu(response["tags"][i])
-        }
-        $(function () {
-            $("#MenuList").menu("refresh");
-        });
-    }
-}
-
 function split(val) {
     return val.split(/\s*/);
 }
@@ -803,6 +839,8 @@ function extractLast(term) {
     return split(term).pop();
 }
 function AddWordsToInputAutoComplete(wordBag, targetIndex) {
+    // clear previous one in case of reloading data
+    $("#" + targetIndex).textcomplete("destroy");
     $("#" + targetIndex).textcomplete([
     {
         words: wordBag,
@@ -817,8 +855,7 @@ function AddWordsToInputAutoComplete(wordBag, targetIndex) {
             return word + ' ';
         }
     }
-    ]);
-    
+    ]);    
 }
 
 function DisplayQuickSearchBar(response) {
@@ -891,6 +928,7 @@ function CreateQuickSearchButton(text, addToNote, searchFor) {
                 }
                 document.getElementById('NoteContents').value += searchFor + " ";
                 document.getElementById('NoteContents').focus();
+                //placeCaretAtEnd(document.getElementById('NoteContents'));
             }
         }
         return false; /* prevent context menu from popping up */
@@ -926,6 +964,10 @@ function ReplaceHashtagsWithQuickLinks(noteText) {
 }
 function ReplaceThisTagWithNothing(noteText, tag) {
     return noteText.replace(new RegExp(tag + "\s?", 'i'), "")
+}
+function ReplaceURLWithAnchor(noteText) {
+    var anchoredText = noteText.replace(new RegExp(/(http|ftp|https):\/\/(\S)+/ig), "<a href='$&' target='_blank'>$&</a> ");
+    return anchoredText;
 }
 function HashTagClick(text) {
     document.getElementById('QueryContents').value = text;
@@ -979,8 +1021,22 @@ function UpdateSearchBarLocation() {
 }
 
 function DisplayNoteCharactersLeft() {
-    var available = document.getElementById("NoteContents").value.length;
-    document.getElementById("NoteStatusMessage").innerHTML = available + "/" + MAXNOTELENGTH;
+    var noteLength = document.getElementById("NoteContents").value.length;
+    var lineCount = document.getElementById("NoteContents").value.lineCount();
+    if (lineCount >= 4 && lineCount <= 10) {
+        document.getElementById("NoteContents").style.height = (83.2 / 3 * lineCount) + "px";
+    }
+    else if (lineCount < 4) {
+        document.getElementById("NoteContents").style.height = "83.2px";
+    }
+    // Decrease the font size if text is over threshold
+    if (noteLength > LARGEFONTMAXLENGTH) {
+        document.getElementById("NoteContents").className = "smallerFont";
+    }
+    else {
+        document.getElementById("NoteContents").className = "";
+    }
+    document.getElementById("NoteStatusMessage").innerHTML = noteLength + "/" + MAXNOTELENGTH;
 }
 
 function DisplayCity(city) {
@@ -1011,15 +1067,9 @@ function ToggleMenu() {
         menuList.style.display = "none";
     }
 }
-
-function AddHashtagToMenu(tag) {
-    var deleteTagList = document.getElementById('DeleteTagList');
-    var deleteTagLI = document.createElement('li');
-    var deleteTagDIV = document.createElement('div');
-    deleteTagLI.appendChild(deleteTagDIV);
-    deleteTagLI.addEventListener("click", function () { DeleteRecentTokens(tag); });
-    deleteTagDIV.innerHTML = tag;
-    deleteTagList.appendChild(deleteTagLI);
+function CloseMenu() {
+    var menuList = document.getElementById('MenuListContainer');
+    menuList.style.display = "none";
 }
 
 function LeaveFeedback() {

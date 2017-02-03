@@ -41,19 +41,20 @@ namespace WebRole.Models
     }
     public class RecentTokenList : TableEntity
     {
-        public const int TokenCountLimit = 1000;
+        // Be careful when increasing this number,
+        // The max size of a storage object is 64kb (around 450 tokens)
+        public const int TokenCountLimit = 300;
         public int TokenCount { get; set; }
         public Dictionary<string, LinkedList<RecentToken>> UsageHistory { get; set; }
         public Queue<string> ExpiryQueue { get; set; }
 
-        public void Add(string token, RecentToken.ActionType actionType)
+        public void Add(string token)
         {
             if (!UsageHistory.ContainsKey(token))
             {
                 UsageHistory[token] = new LinkedList<RecentToken>();
             }
             RecentToken recentToken = new RecentToken();
-            recentToken.Type = actionType;
             recentToken.TimeOfAction = DateTime.UtcNow;
             UsageHistory[token].AddLast(recentToken);
             ExpiryQueue.Enqueue(token);
@@ -88,12 +89,6 @@ namespace WebRole.Models
     }
     public class RecentToken
     {
-        public ActionType Type { get; set; }
         public DateTime TimeOfAction { get; set; }
-        public enum ActionType
-        {
-            Insert,
-            Lookup
-        }
     }
 }

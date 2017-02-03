@@ -5,6 +5,7 @@ var UNCATEGORIZEDTAG = "Uncategorized";
 var RESULTSSCROLLBUFFER = 200;
 var MAXRECENTTOKENSTODISPLAYFORBROWSER = 7;
 var MAXRECENTTOKENSTODISPLAYFORMOBILE = 15;
+var LARGEFONTMAXLENGTH = 40;
 
 /* Browser detection */
 var is_chrome = navigator.userAgent.indexOf('Chrome') > -1;
@@ -185,3 +186,22 @@ function AddWindowUnload() {
 function RemoveWindowUnload() {
     showUnload = false;
 }
+function placeCaretAtEnd(el) {
+    el.focus();
+    if (typeof window.getSelection != "undefined"
+            && typeof document.createRange != "undefined") {
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    } else if (typeof document.body.createTextRange != "undefined") {
+        var textRange = document.body.createTextRange();
+        textRange.moveToElementText(el);
+        textRange.collapse(false);
+        textRange.select();
+    }
+}
+String.prototype.lines = function () { return this.split(/\r*\n/); }
+String.prototype.lineCount = function () { return this.lines().length - (navigator.userAgent.indexOf("MSIE") != -1); }

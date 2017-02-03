@@ -24,20 +24,21 @@
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC59W4ZXQtRg9I6ITSgMvVG91flEwOMlgg"></script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.0.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.textcomplete/1.8.0/jquery.textcomplete.min.js"></script>
-    <link rel="stylesheet" href="Style/jquery-ui.css">
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script src="Scripts/Common.js"></script>
-    <script src="Scripts/Location.js"></script>
+    <script src="https://rawgit.com/showdownjs/showdown/develop/dist/showdown.js"></script>
+        <link rel="stylesheet" href="Style/jquery-ui.css">
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <script src="Scripts/Common.js"></script>
+        <script src="Scripts/Location.js"></script>
 
-    <!-- Insert this line after script imports -->
-    <script>if (window.module) module = window.module;</script>
+        <!-- Insert this line after script imports -->
+        <script>if (window.module) module = window.module;</script>
 
-    <script type="text/javascript">
+        <script type="text/javascript">
 
-    </script>
-    <link rel="stylesheet" type="text/css" href="Style/Style.css">
-    <link rel="stylesheet" type="text/css" href="Style/TakeNote.css">
-    
+        </script>
+        <link rel="stylesheet" type="text/css" href="Style/Style.css">
+        <link rel="stylesheet" type="text/css" href="Style/TakeNote.css">
+
 </head>
 <body onload="CheckAuthCookie(); GeoCoderInit(); PreventFOUC(); DisplayNoteCharactersLeft();">        
     <div id="WorkingArea" class="ClearStyleOnMobile">
@@ -46,24 +47,23 @@
                 <table id="SearchBarTable">
                     <tr>
                         <td id="MenuContainer">
-                            <input type="submit" id="MenuButton" onclick="ToggleMenu()" value="" />
+                            <input type="submit" id="MenuButton" onclick="ToggleMenu()" value="" onblur="CloseMenu()"/>
                             <div id="MenuListContainer" style="display:none;">
                                 <ol id="MenuList">
-                                    <li onclick="LogOut()">
-                                        <div>Log Out</div>
-                                    </li>
-                                    <li>
-                                        <div>Delete Hashtags</div>
-                                        <ul id="DeleteTagList" style="max-height:20em;overflow-y:scroll"></ul>
-                                    </li>
                                     <li onclick="LeaveFeedback()">
                                         <div>Leave Feedback</div>
+                                    </li>
+                                    <li onclick="ToggleNightmode()">
+                                        <div>Toggle Nightmode</div>
+                                    </li>
+                                    <li onclick="LogOut()">
+                                        <div>Log Out</div>
                                     </li>
                                 </ol>
                             </div>
                         </td>
                         <td id="SearchInputTD">
-                            <input type="text" id="QueryContents" placeholder="Search" />
+                            <input type="text" id="QueryContents" placeholder="Search" onkeydown="SearchCachedNotes" />
                         </td>
                         <td id="SearchButtonTD">
                             <input type="submit" id="QueryButton" onclick="QueryNotes()" value="" />
@@ -86,11 +86,11 @@
                                                     afterMove: moveNote}">
                             <tr class="noteEntry" data-bind="visible: shouldBeVisible(), css: { completedNoteNode: note().completed() }">
                                 <td class="noteTextTD">
-                                    <div class="noteText noselect" data-bind="visible: !editingNote(), html: formattedText(), css: { completedNoteNode: note().completed() }, pressAndHold: pressAndHoldAction">
+                                    <div class="noteText noselect" data-bind="visible: !editingNote(), html: formattedText(), css: { completedNoteNode: note().completed(), smallerFont: smallerFont() }, pressAndHold: pressAndHoldAction">
                                     </div>
                                     <div data-bind="visible: editingNote()">
                                         <!-- If you change this structure, update the focus() path in TakeNote.js -->
-                                        <textarea type="text" class="noteEditInput" data-bind="textInput: note().contents, hasfocus: note().contents.focused, css: { completedNoteNode: note().completed() }" onfocus="HideNoteInput()" onblur="DisplayNoteInput()"></textarea>
+                                        <textarea type="text" class="noteEditInput" data-bind="textInput: note().contents, hasfocus: note().contents.focused, css: { completedNoteNode: note().completed(), smallerFont: smallerFont() }" onfocus="HideNoteInput()" onblur="DisplayNoteInput()"></textarea>
                                     </div>
                                 </td>
                                 <td class="noteTimestampTD">
@@ -123,7 +123,7 @@
                 <tr>
                     <td id="NoteInputTD">
                         <div id="NoteInputContainer">
-                            <textarea rows="10" cols="30" id="NoteContents" placeholder="Add a new note..." onkeyup="DisplayNoteCharactersLeft()"></textarea>
+                            <textarea contentEditable="true" id="NoteContents" placeholder="Add a new note..." onkeyup="DisplayNoteCharactersLeft()" onkeypress="DisplayNoteCharactersLeft()"></textarea>
                         </div>
                     </td>
                     <td id="NoteButtonTD">

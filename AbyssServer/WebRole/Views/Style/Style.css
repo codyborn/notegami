@@ -5,6 +5,7 @@
 }
 body {
     margin: 0;
+    font-family: Helvetica Neue, Segoe UI, Helvetica, Arial, sans-serif;
 }
 
 input {
@@ -23,6 +24,7 @@ input[type=checkbox]{
 input[type=text],input[type=password],textarea{    
     background:#f5f8fa;
     margin-bottom: 1px;
+    font-family: Helvetica Neue, Segoe UI, Helvetica, Arial, sans-serif;
 }
 
 
@@ -40,7 +42,10 @@ a {
     color: rgba(0,0,0,0) !important;
     background-position:center !important;
 }
-
+[contentEditable=true]:empty:not(:focus):before{
+    content:attr(data-text);
+    color:#c1c1c2;
+}
 
 .strikeThrough {
     text-decoration: line-through;

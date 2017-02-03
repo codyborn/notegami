@@ -187,6 +187,7 @@
     <Content Include="Views\Images\splash_icon.png" />
     <Content Include="Views\Images\windows.png" />
     <Content Include="Views\PasswordReset.html" />
+    <Content Include="Views\PrivacyPolicy.html" />
     <Content Include="Views\Scripts\angular.js" />
     <Content Include="Views\Scripts\Common.js" />
     <Content Include="Views\Scripts\ko.observableDictionary.js" />

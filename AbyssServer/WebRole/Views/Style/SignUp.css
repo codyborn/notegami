@@ -2,7 +2,7 @@
 #Title {
     font-size:300%;
     color:#FFF;
-    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-family:Helvetica Neue, Segoe UI, Helvetica, Arial, sans-serif;
     margin-bottom:.5em;
 }
 #TitleImg {
@@ -18,7 +18,7 @@
 }
 #ResetPasswordTitle {    
     color:#FFF;
-    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-family:Helvetica Neue, Segoe UI, Helvetica, Arial, sans-serif;
     margin-bottom:.5em;
 }
 #Form {            
@@ -76,13 +76,22 @@ input[type=submit] {
     width:10em;
     height:auto;
 }
-#WindowsInstallIcon {
-    width:5em;
+#WindowsAppLinkIcon {
+    width:8em;
     height:auto;
 }
-#AppLinkTable td {
-    padding-left: 20px;
+#AppLinkTable td {   
     padding-right: 20px;
+}
+#Footer {
+    position: absolute;
+    bottom: .2em;
+    font-size:.8em;
+    left: 50%;
+    /* bring your own prefixes */
+    transform: translate(-50%);
+    -ms-transform: translate(-50%); /* IE 9 */
+   	-webkit-transform: translate(-50%); /* Safari */
 }
 
 @media only screen and (max-device-width: 480px) {

@@ -75,7 +75,7 @@ namespace WebRole
 
             if (ShouldTrackRecent() && shouldTrackRecent)
             {
-                AddTokenToRecent(recentTokenList, userId, token, RecentToken.ActionType.Insert);
+                AddTokenToRecent(recentTokenList, userId, token);
             }
             return index;
         }
@@ -127,7 +127,7 @@ namespace WebRole
         /// </summary>
         /// <param name="userId"></param>
         /// <param name="token"></param>
-        private void AddTokenToRecent(List<RecentTokenList> recentTokenLists, string userId, string token, RecentToken.ActionType actionType)
+        private void AddTokenToRecent(List<RecentTokenList> recentTokenLists, string userId, string token)
         {
             string rowKey = GetRecentTokenRowKey();
             RecentTokenList recentTokenListOfInterest = null;
@@ -150,7 +150,7 @@ namespace WebRole
 
                 recentTokenLists.Add(recentTokenListOfInterest);
             }
-            recentTokenListOfInterest.Add(token, actionType);
+            recentTokenListOfInterest.Add(token);
         }        
 
         /// <summary>
@@ -303,6 +303,7 @@ namespace WebRole
                 retrievedNote.Indices = new HashSet<IndexIndex>();
             }
             DateTime localTime = DateTime.UtcNow.AddMinutes(-utcOffset);
+            retrievedNote.Timestamp = DateTime.UtcNow;
             // Keep location and date indices; only remove the contents
             RemoveContentIndices(retrievedNote, userId);
 

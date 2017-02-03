@@ -7,7 +7,7 @@ namespace WebRole
         public static void Register(HttpConfiguration config)
         {
             // Web API configuration and services
-
+            // https://www.asp.net/web-api/overview/web-api-routing-and-actions/routing-in-aspnet-web-api
             // Web API routes
             config.MapHttpAttributeRoutes();
 

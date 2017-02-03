@@ -38,7 +38,7 @@ textarea {
     position: relative;    
     padding-left:.5em;    
     z-index:100;
-    font-family: Arial,Helvetica,sans-serif;    
+    font-family: Helvetica Neue, Segoe UI, Helvetica, Arial, sans-serif;
     height:100%;
 }
 
@@ -56,7 +56,7 @@ textarea {
 }
 #MenuListContainer li {
     padding:.2em;
-    width:9em;
+    width:10em;
 }
 
 .InputGroup {
@@ -89,6 +89,7 @@ textarea {
     width:10%;
 }
 #QueryContents {
+    font-size:1.3em;
     margin-left:1em;
     width: 99%;
     height:100%;
@@ -130,13 +131,19 @@ textarea {
     padding-right:1em;
 }
 #NoteButtonTD {
-    width:10%;
+    min-width:4em;
 }
 #NoteInputContainer {
     width:100%;
+    min-height: 4em;
 }
 #NoteContents {
+    font-size:1.3em;
     width:100%;
+    height: 83.2px;
+    border: 1px solid #ddd;
+    padding:3px;
+    background-color:#FFF;
 }
 #NoteButton {
     background-image:url('../Images/send_icon.png');
@@ -152,7 +159,7 @@ textarea {
 }
 #Results {
     width:38em;
-    margin-top:12em;
+    margin-top:10em;
     overflow-y: scroll;
     overflow-x: hidden;
     /* Firefox */
@@ -180,6 +187,9 @@ textarea {
 }
 .completedNoteNode {
     color: #d3d1d1 !important;
+}
+.smallerFont {
+    font-size:1em !important;
 }
 .noteTitle {
     font-size:1.5em;
@@ -210,14 +220,24 @@ textarea {
 .noteText {
     color:#000;
     font-size:1.3em;
-    width:18em;
+    width:26em;
+    margin-right:-5em;
     min-height:1.3em;
     word-wrap: break-word;     
     white-space: pre-wrap;
 }
+.noteText p, ul, menu, dir { 
+    display: inline-table;
+    margin: 0em !important;
+    -webkit-margin-before: 0em !important;
+    -webkit-margin-after: 0em !important;
+    -webkit-margin-start: 0px !important;
+    -webkit-margin-end: 0px !important;    
+}
 .noteEditInput {
     font-size:1.3em;    
     width:100% !important;
+    font-family: Helvetica Neue, Segoe UI, Helvetica, Arial, sans-serif;
 }
 .EditActionButtonsContainer {
     float:right;    
@@ -286,10 +306,6 @@ textarea {
        (min--moz-device-pixel-ratio: 1.5),  
        (min-device-pixel-ratio: 1.5)
 {    
-    #MenuContainer
-     {
-        
-    }
     /* override prev styles with defaults */
     .ClearStyleOnMobile {
         width: 100% !important;
@@ -306,6 +322,13 @@ textarea {
         padding-left:.5em;
         width: 15%;
     }
+    #QueryContents {
+        margin-left:.8em;
+        font-size:1.1em;
+    }
+    #QueryButton {
+        margin-left: 0em;
+    }
     .QuickLinksList {                
         overflow-x: auto;      
         white-space: nowrap;  
@@ -313,9 +336,6 @@ textarea {
     }
     .InputGroup {
         width:100% !important;
-    }
-    #Results {
-        margin-top:11em;
     }
     #ResultPostPadding {
         height:6em;
@@ -335,7 +355,8 @@ textarea {
     }
     #NoteContents {                
         table-layout:fixed;
-        font-size: 1em;
+        font-size: 1.1em;
+        background-color:#FFF;
     }
     .noteNode {
         margin-right: 0em;
@@ -346,8 +367,11 @@ textarea {
     .noteText {
         width:100%;
         word-break:break-word;
-        font-size: 1em;
         cursor:pointer;
+        font-size:1.1em;
+    }
+    .smallerFont {
+        font-size:.9em !important;
     }
     .noteEditInput {
         font-size: 1em;
@@ -370,16 +394,20 @@ textarea {
     }
     #NoteDisplayTD {
         position: relative;
-        top: -.3em;
+        top: -0.4em;
+        padding-top: .3em;
     }
     #NoteDisplay {
         font-size: .8em;
         margin-bottom:.5em;
-        color:#FFF;
+        color:#ddd;
     }
     #AddNoteBar {
         bottom: 0em;
         padding-bottom: .5em;
+        background-color:#0093b4;
+    }    
+    #AddNoteTable {
         background-color:#0093b4;
     }
     #NoteStatusMessage {
@@ -391,6 +419,9 @@ textarea {
         filter: invert(100%);
         opacity: 1.0;
         filter: alpha(opacity=100); /* For IE8 and earlier */
+    }
+    .noteContents td {
+        padding: .5em;
     }
 }
 
@@ -407,5 +438,17 @@ textarea {
     }
     .quickSearchButton {
         font-size:.9em !important;
+    }
+    .noteText {
+        font-size: 1em;
+    }
+    .smallerFont {
+        font-size:.8em !important;
+    }
+    #QueryContents {
+        font-size:1em;
+    }
+    #NoteContents {        
+        font-size: 1em;
     }
 }

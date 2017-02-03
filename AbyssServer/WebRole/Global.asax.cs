@@ -13,6 +13,7 @@ namespace WebRole
                 "Default",                                              // Route name
                 "{controller}/{action}"                           // URL with parameters                
             );
+                
             GlobalConfiguration.Configure(WebApiConfig.Register);
 
         }

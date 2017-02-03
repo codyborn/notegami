@@ -191,7 +191,7 @@ namespace WebRole.Controllers
                     Utils.SendMail(user.Email,
                                   "Notegami.com Password Reset",
                                   string.Format(@"<p>Please use this link to create your new password.</p>
-                                                  <a href='http://notegami.com/views/passwordreset.html?email={0}&token={1}'>Create Password</a>",
+                                                  <a href='https://notegami.com/views/passwordreset.html?email={0}&token={1}'>Create Password</a>",
                                   user.Email, resetToken.Item1)).Wait();
 
                     return "Success";
