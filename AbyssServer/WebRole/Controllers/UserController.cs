@@ -102,6 +102,27 @@ namespace WebRole.Controllers
         }
 
         [HttpPost]
+        public bool LogOut([FromBody]AuthAttempt attempt)
+        {
+            if (attempt == null ||
+                string.IsNullOrEmpty(attempt.Email) ||
+                string.IsNullOrEmpty(attempt.AuthToken))
+            {
+                return false;
+            }
+            User user = new User();
+            user.Email = attempt.Email;            
+            user.Init();
+            User retrievedUser;
+            TableStore.Get<User>(TableStore.TableName.users, user.PartitionKey, user.Email, out retrievedUser);
+            if (retrievedUser == null)
+            {
+                return false;
+            }
+            return retrievedUser.RemoveAuthToken(attempt.AuthToken);
+        }
+
+        [HttpPost]
         public string AuthUser([FromBody]User user)
         {
             if (string.IsNullOrEmpty(user.Email))
@@ -124,11 +145,6 @@ namespace WebRole.Controllers
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         return string.Empty;
-                    }
-                    // New property on 8/20/16, give existing users some cred
-                    if (retrievedUser.SignupDate == new DateTime())
-                    {
-                        retrievedUser.SignupDate = DateTime.UtcNow;
                     }
                     // Generate temporary auth token
                     string token = retrievedUser.GetAuthToken();
@@ -251,6 +267,7 @@ namespace WebRole.Controllers
                     retrievedUser.Password = user.Password;
                     retrievedUser.EncryptPassword();
                     retrievedUser.PWResetTokenWithExpiry = null;
+                    retrievedUser.ClearAuthTokens();
                     string token = retrievedUser.GetAuthToken();
                     TableStore.Update(TableStore.TableName.users, retrievedUser);
                     response.Token = token;

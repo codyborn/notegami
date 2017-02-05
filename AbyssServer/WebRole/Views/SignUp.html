@@ -61,10 +61,10 @@
                     waitingOnServer = false;
                     if (response != "") {                        
                         if (response.Error == "Success") {
-                            StoreAuthToken(email, password, response.Token);
+                            StoreAuthToken(email, response.Token);
                             var redirect = 'TakeNote.html?q=#tutorial';
                             console.log('created user: ' + response);
-                            window.location.replace(redirect);
+                            Redirect(redirect);
                         }
                         else {
                             showError(response.Error);
@@ -85,12 +85,12 @@
             var email = document.getElementById("email").value;
             var password = document.getElementById("password").value;
             AuthUserAndSetCookie(email, password,
-                function () { window.location.replace('TakeNote.html'); }, // on success
+                function () { Redirect('TakeNote.html'); }, // on success
                 function () { showError("Incorrect credentials"); HideButtonImage("SigninButton"); }) // on failure
         }	
 		
 		// If the cookie exists
-		function RenewAuthCookie()
+		function LoginCheckAuthCookie()
         {
 		    if (CacheStoreGet('prevSignup') != null) {
                 DisplayLogin();
@@ -105,12 +105,12 @@
 				// no cookie is set
 				return;
 			}
-			var password = CacheStoreGet("password");
 
-			ShowLoading("SignupButton");
-			AuthUserAndSetCookie(email, password,
-                function () { window.location.replace('TakeNote.html'); HideButtonImage("SignupButton"); }, // on success
-                function () { showError("Please log in to continue"); HideButtonImage("SignupButton"); }) // on failure
+			ShowLoading("SigninButton");
+
+			CheckAuthCookie(
+                function () { Redirect('TakeNote.html'); }, // on success
+                function () { HideButtonImage("SigninButton"); }); // onfailure
 		}
 
 		function InitiatePWReset()
@@ -198,7 +198,7 @@
 		}
     </script>
 </head>
-<body onload="RenewAuthCookie();">   
+<body onload="LoginCheckAuthCookie();">   
     <img style="display:none" src="Images/splash_icon.png" />
     <div id="Form" onkeyup="PerformActionIfReturn(event)">
         <div id="Title"><img id="TitleImg" src="Images/app_icon.png" /><div id="TitleText">Notegami</div></div>
@@ -230,7 +230,7 @@
         </div>
     </div>
     <div id="Footer">
-        <div id="PrivacyPolicyLink"><a href="#" onclick="window.location.replace('PrivacyPolicy.html');">Privacy Policy</a></div>
+        <div id="PrivacyPolicyLink"><a href="#" onclick="Redirect('PrivacyPolicy.html');">Privacy Policy</a></div>
     </div>
 </body>
 </html>

@@ -16,14 +16,12 @@ var is_opera = navigator.userAgent.toLowerCase().indexOf("op") > -1;
 if ((is_chrome) && (is_safari)) { is_safari = false; }
 if ((is_chrome) && (is_opera)) { is_chrome = false; }
 
-function StoreAuthToken(email, password, token) {
+function StoreAuthToken(email, token) {
     CacheStoreSet("email", email);
-    CacheStoreSet("password", password);
     CacheStoreSet("token", token);
 }
 function ClearAuthToken() {
     CacheStoreSet("email", null);
-    CacheStoreSet("password", null);
     CacheStoreSet("token", null);
 }
 
@@ -72,7 +70,7 @@ function AuthUserAndSetCookie(email, password, callbackOnSuccess, callbackOnFail
         data: user,
         success: function (response) {
             if (response != "") {
-                StoreAuthToken(email, password, response);
+                StoreAuthToken(email, response);
                 CacheStoreSet('prevSignup', true);
                 console.log('found user: ' + response);
                 if (callbackOnSuccess != null) {
@@ -88,6 +86,51 @@ function AuthUserAndSetCookie(email, password, callbackOnSuccess, callbackOnFail
         dataType: 'json'
     });
 }
+
+
+// If the cookie doesn't exist, redirect to login page
+// If the cookie exists but the token is expired, renew token
+function CheckAuthCookie(onSuccess, onFailure) {
+    var email = CacheStoreGet("email");
+    if (email == null) {
+        // no cookie is set
+        onFailure();        
+        return;
+    }
+    var authToken = CacheStoreGet("token");
+
+    // Do we need to renew?
+    IsTokenValid(email, authToken,
+        onFailure,
+        onSuccess);
+}
+
+function IsTokenValid(email, authToken, callbackIfFalse, callbackIfTrue) {
+    var authAttempt =
+    {
+        Email: email,
+        AuthToken: authToken
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "../user/AuthTokenValid",
+        data: authAttempt,
+        success: function (response) {
+            console.log('token is valid: ' + response);
+            if (!response) {
+                if (callbackIfFalse != null) {
+                    callbackIfFalse();
+                }
+            }
+            else if (callbackIfTrue != null) {
+                callbackIfTrue();
+            }
+        },
+        dataType: 'json'
+    });
+}
+
 // Must navigate to the Signup.html page prior to calling
 function showError(message) {
     document.getElementById("errorDisplay").innerHTML = message;

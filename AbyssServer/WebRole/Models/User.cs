@@ -77,7 +77,7 @@ namespace WebRole.Models
         {
             // Generate new token
             string authToken = Utils.Rand().ToString();
-            DateTime expiry = DateTime.UtcNow.AddDays(1);
+            DateTime expiry = DateTime.UtcNow.AddDays(90);
             if (TokenList == null)
             {
                 TokenList = new Dictionary<string, DateTime>();
@@ -104,6 +104,7 @@ namespace WebRole.Models
 
         /// <summary>
         /// Returns true if the auth token is still valid
+        /// 2/2017 ignoring expiry on token since user can logout
         /// </summary>
         public bool ValidateAuthToken(string token)
         {
@@ -111,7 +112,28 @@ namespace WebRole.Models
             {
                 return false;
             }
-            return TokenList.ContainsKey(token) && TokenList[token].CompareTo(DateTime.UtcNow) >= 0;
+            return TokenList.ContainsKey(token);// && TokenList[token].CompareTo(DateTime.UtcNow) >= 0;
+        }
+
+        // For logout scenario
+        public bool RemoveAuthToken(string token)
+        {
+            if (TokenList == null)
+            {
+                return false;
+            }
+            return TokenList.Remove(token);
+        }
+
+        public bool ClearAuthTokens()
+        {
+
+            if (TokenList == null)
+            {
+                return false;
+            }
+            TokenList.Clear();
+            return true;
         }
     }
 }

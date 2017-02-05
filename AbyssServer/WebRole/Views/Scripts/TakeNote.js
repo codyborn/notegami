@@ -36,6 +36,13 @@ var showDownConverter = new showdown.Converter({
     disableForced4SpacesIndentedSublists: 'true'
 });
 
+function TakeNoteCheckAuthCookie() {
+
+    CheckAuthCookie(
+        function () { QueryRecentTokens(); }, // on success
+        function () { Redirect("Signup.html"); showError("Please log in to continue"); }); // onfailure
+}
+
 function ToggleNightmode() {
     window.clearInterval(themeClock);
     if (currTheme == "day") {
@@ -473,31 +480,9 @@ $(document).ready(function () {
     }
 });
 
-// If the cookie doesn't exist, redirect to login page
-// If the cookie exists but the token is expired, renew token
-function CheckAuthCookie() {
+function LogOut() {
     var email = CacheStoreGet("email");
-    if (email == null) {
-        // no cookie is set
-        Redirect("Signup.html");
-        return;
-    }
-    var authToken = CacheStoreGet("token");
-
-    // Do we need to renew?
-    IsTokenValid(email, authToken,
-        function () {
-            AuthUserAndSetCookie(email, CacheStoreGet("password"),
-                            function () { QueryRecentTokens(); }, // on success
-                            function () {
-                                Redirect('Signup.html');
-                                showError("Please log in to continue");
-                            }) // on failure
-        },
-        function () { QueryRecentTokens(); });
-}
-
-function IsTokenValid(email, authToken, callbackIfFalse, callbackIfTrue) {
+    var authToken = CacheStoreGet("token");    
     var authAttempt =
     {
         Email: email,
@@ -506,24 +491,10 @@ function IsTokenValid(email, authToken, callbackIfFalse, callbackIfTrue) {
 
     $.ajax({
         type: "POST",
-        url: "../user/AuthTokenValid",
+        url: "../user/LogOut",
         data: authAttempt,
-        success: function (response) {
-            console.log('token is valid: ' + response);
-            if (!response) {
-                if (callbackIfFalse != null) {
-                    callbackIfFalse();
-                }
-            }
-            else if (callbackIfTrue != null) {
-                callbackIfTrue();
-            }
-        },
         dataType: 'json'
-    });
-}
-
-function LogOut() {
+    });   
     localStorage.clear();
     ClearAuthToken();
     Redirect("Signup.html");
