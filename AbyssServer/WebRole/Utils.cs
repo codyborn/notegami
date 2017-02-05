@@ -77,18 +77,29 @@ namespace WebRole
         public static string DeveloperId = "c1c8b9bc10a6451eba25cf8a2cb07e43";
         public static string UserPartition = "users";
         public static int MaxNoteLength = 10000;
+        public static int PingTimeInMs = 10000;
         // If you're going to query more than this number of notes,
         // Query all notes for a user and iterate through them on the server-side
         // Profiled using an account with 180 notes
         public static int MaxIndividualNoteQueryCount = 1;
         // Note that there is an invisible character between '#' and "feedback"
         public static string[] TutorialNotes =
-            { "#Tutorial Send direct feedback to the developer by including #feedback in your note.",
-             "#Tutorial Hashtags that you use frequently will appear in the quick-search bar at the top. You can add a tag to a new note by press-and-hold action on your phone or right-clicking on your desktop.",
-             "#Tutorial You can search for your notes by content, hashtags, date, and location.",
-             "#Tutorial Welcome to Notegami!\nThink of this app as your personal search engine.  Notegami helps you stay organized by automatically indexing all of your notes."
+            {
+              "#MarkDown A [link](https://Notegami.com)",
+              "#MarkDown An in-note url: https://Notegami.com","#Tutorial Send direct feedback to the developer by including **#feedback** in your note.",
+              "#MarkDown Numbered list:\n  1. Step 1 most important\n  2. Next is step 2\n  3. Don't forget about step 3!",
+              "#Grocerylist \n- Coffee\n- Eggs\n- Bread",
+              "#MarkDown Bullet list:\n  * Coffee\n  * Caffè\n  * コーヒー",
+              "#Tutorial Click on a note to edit, delete, or mark it as completed.",
+              "#MarkDown \n- [x] Get a better note app\n- [ ] Conquer the world\n- [ ] Rate Notegami",
+              "#Tutorial Notes support markdown and emojis so you can stay organized in _style_ 💩\nSearch for **#markdown** to see how.",
+              "#MarkDown Horizontal rule:\n\n---",
+              "#Tutorial Adding hashtags to categorize your notes will make it easy to look up notes and add similar notes in the future.",
+              "#Markdown\n# Heading\n\n## Sub-heading\n\n### Another deeper heading",
+              "#Tutorial You can search for your notes by content, hashtags, date, and location.",
+              "#Markdown\nText attributes _italic_, *italic*, __bold__, **bold**, `monospace`.",
+              "#Tutorial Welcome to **Notegami**!\nThink of this app as your personal search engine.  Notegami helps you save time by automatically organizing all of your notes."
             };
-        public static string ExampleNote = "#Grocerylist Coffee\nEggs\nBread";
 
         public enum RequestAPI
         {

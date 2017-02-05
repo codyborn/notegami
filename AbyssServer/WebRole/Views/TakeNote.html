@@ -42,7 +42,7 @@
 </head>
 <body onload="CheckAuthCookie(); GeoCoderInit(); PreventFOUC(); DisplayNoteCharactersLeft();">        
     <div id="WorkingArea" class="ClearStyleOnMobile">
-        <div id="SearchBarContainer" class="InputGroup ClearStyleOnMobile" onkeyup="PerformActionIfReturn(event)">            
+        <div id="SearchBarContainer" class="InputGroup ClearStyleOnMobile" onkeyup="PerformActionIfReturn(event)" onclick="HideQuickInputContainer()">            
             <div id="SearchBar" class="InputGroup ClearStyleOnMobile">
                 <table id="SearchBarTable">
                     <tr>
@@ -63,7 +63,7 @@
                             </div>
                         </td>
                         <td id="SearchInputTD">
-                            <input type="text" id="QueryContents" placeholder="Search" onkeydown="SearchCachedNotes" />
+                            <input type="text" id="QueryContents" placeholder="Search" onkeydown="SearchCachedNotes"/>
                         </td>
                         <td id="SearchButtonTD">
                             <input type="submit" id="QueryButton" onclick="QueryNotes()" value="" />
@@ -73,7 +73,7 @@
                 <div id="QuickSearchContainer"></div>
             </div>            
         </div>
-        <div id="Results" class="contractedResults ClearStyleOnMobile" onscroll="UpdateSearchBarLocation()" style="display:none;">
+        <div id="Results" class="contractedResults ClearStyleOnMobile" onscroll="UpdateSearchBarLocation()" style="display:none;" onclick="HideQuickInputContainer()">
             <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noteNodes().length == 0 && $root.noteListViewModel.queryOccurred())">No results matched</div>
             <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noteNodes().length == 0 && !$root.noteListViewModel.queryOccurred())">Search for something to see your notes</div>
             <span data-bind="foreach: $root.noteListViewModel.noteNodes, visible: $root.noteListViewModel.noteNodes().length > 0">
@@ -103,7 +103,7 @@
                                     <div class="EditActionButtons">
                                         <span class="DeleteActionButtonContainer">
                                             <input type="submit" class="DeleteNoteButton" data-bind="event: { mousedown: deleteNote }" value="Delete" />
-                                            <label class="CompleteButton"><input type="checkbox" data-bind="checked: completed" value="Complete" />Complete</label>
+                                            <label class="CompleteButton"><input type="checkbox" data-bind="checked: completed" value="Complete" />Mark as Complete</label>
                                         </span>
                                         <span class="EditActionButtonsContainer">
                                             <input type="submit" class="CancelEditButton" data-bind="event: { mousedown: cancelEdit }" value="Cancel" />
@@ -119,11 +119,12 @@
             <div id="ResultPostPadding"></div>
         </div>
         <div id="AddNoteBar" class="InputGroup ClearStyleOnMobile" data-bind="visible: noteInputViewModel.shouldBeVisible()">
+            <div id="QuickInputContainer" style="display:none"></div>
             <table id="AddNoteTable">
                 <tr>
                     <td id="NoteInputTD">
                         <div id="NoteInputContainer">
-                            <textarea contentEditable="true" id="NoteContents" placeholder="Add a new note..." onkeyup="DisplayNoteCharactersLeft()" onkeypress="DisplayNoteCharactersLeft()"></textarea>
+                            <textarea contentEditable="true" id="NoteContents" placeholder="Add a new note..." onkeyup="DisplayNoteCharactersLeft()" onkeydown="DisplayNoteCharactersLeft()" onfocus="DisplayQuickInputContainer()"></textarea>
                         </div>
                     </td>
                     <td id="NoteButtonTD">

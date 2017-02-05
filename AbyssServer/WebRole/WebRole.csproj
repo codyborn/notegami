@@ -222,6 +222,7 @@
     <Compile Include="Models\User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpecialNoteAction.cs" />
+    <Compile Include="TablePinger.cs" />
     <Compile Include="TableStore.cs" />
     <Compile Include="Telemetry.cs" />
     <Compile Include="Utils.cs" />

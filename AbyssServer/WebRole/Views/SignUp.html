@@ -52,7 +52,7 @@
                 User: user,
                 UTCOffset: new Date().getTimezoneOffset()
             }
-
+            showError("Creating Account");
             $.ajax({
                 type: "POST",
                 url: "../user/CreateUser",

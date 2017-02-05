@@ -86,7 +86,6 @@ namespace WebRole.Controllers
                     {
                         IndexerBase.CreateNote(user.UserId, (int)userRequest.UTCOffset, note, string.Empty, user.Email);
                     }
-                    IndexerBase.CreateNote(user.UserId, (int)userRequest.UTCOffset, Constant.ExampleNote, string.Empty, user.Email);
 
                     response.Token = token;
                     response.Error = "Success";

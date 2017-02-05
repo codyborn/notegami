@@ -49,6 +49,9 @@ input[type=submit] {
 #NoteDisplay {
     color: #FFF !important;
 }
+#QuickInputContainer {
+    background-color:#262626;
+}
 .textcomplete-dropdown {   
     background-color:#444;
     color:#f5f8fa;
@@ -93,5 +96,8 @@ a.ui-button:active,
     }    
     #AddNoteTable {
         background-color:#007792 !important;
+    }
+    #QuickInputContainer {
+        background-color:#007792;
     }
 }

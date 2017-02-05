@@ -15,7 +15,8 @@ namespace WebRole
             );
                 
             GlobalConfiguration.Configure(WebApiConfig.Register);
-
+            // Keep the connection to table alive for quick response
+            TablePinger.BeginTablePings();
         }
 
         protected void Session_Start(object sender, EventArgs e)

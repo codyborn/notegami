@@ -111,7 +111,9 @@ function NoteFacade(note, currentTag) {
     });
     self.formattedText = ko.computed(function () {
         var taglessNote = ReplaceThisTagWithNothing(self.note().contents(), currentTag);
-        taglessNote = ReplaceHashtagsWithQuickLinks(taglessNote).trim();        
+        taglessNote = EscapeHtmlTags(taglessNote);
+        taglessNote = ReplaceHashtagsWithQuickLinks(taglessNote).trim();
+        //taglessNote = ReplaceURLsWithMarkdownVersion(taglessNote);
         return showDownConverter.makeHtml(taglessNote);
     });
     self.smallerFont = ko.computed(function () {
@@ -268,8 +270,7 @@ function NoteNode(tag) {
     };
 
     this.moveNote = function (elem) {
-        if (elem.nodeType == 1) {
-            console.log('afterMove(' + elem.textContent + '): ' + elem.saveOffsetTop + ' to ' + elem.offsetTop);
+        if (elem.nodeType == 1) {            
             if (elem.offsetTop !== elem.saveOffsetTop) {
                 var tempElement = elem.cloneNode(true);
                 $(elem).css({ visibility: 'hidden' });
@@ -455,8 +456,7 @@ $(document).ready(function () {
     var cachedResponse = localStorage.getItem("recentTokens");
     if (cachedResponse != null) {
         var parsedResponse = JSON.parse(cachedResponse);
-        DisplayQuickSearchBar(parsedResponse);
-        PopulateAutoComplete(parsedResponse);
+        PopulateRecentTokenDisplays(parsedResponse);
     }
     if (is_safari) {
         document.getElementById('Results').style.height = ($(document).height() - 320) + "px";
@@ -551,6 +551,7 @@ function CreateNote() {
             success: function (response) {
                 if (response == "Success") {
                     document.getElementById("NoteContents").value = "";
+                    DisplayNoteCharactersLeft();
                     ShowCompletedIcon("NoteButton");
                     document.getElementById("NoteStatusMessage").innerHTML = "Success";
                     // Update the query results
@@ -791,8 +792,7 @@ function QueryRecentTokens() {
         success: function (response) {
             if (response != null) {
                 localStorage.setItem("recentTokens", JSON.stringify(response));
-                DisplayQuickSearchBar(response);
-                PopulateAutoComplete(response);
+                PopulateRecentTokenDisplays(response);
             }
         }
     });
@@ -816,8 +816,7 @@ function DeleteRecentTokens(token) {
         success: function (response) {
             if (response != null) {
                 localStorage.setItem("recentTokens", JSON.stringify(response));
-                DisplayQuickSearchBar(response);
-                PopulateAutoComplete(response);
+                PopulateRecentTokenDisplays(response);
             }
         }
     });
@@ -844,7 +843,7 @@ function AddWordsToInputAutoComplete(wordBag, targetIndex) {
     $("#" + targetIndex).textcomplete([
     {
         words: wordBag,
-        match: /(#?\w+)$/,
+        match: /(#?\w+)$/i,
         search: function (term, callback) {
             callback($.map(this.words, function (word) {
                 return word.indexOf(term) === 0 || word.indexOf(term) === 1 ? word : null;
@@ -858,6 +857,11 @@ function AddWordsToInputAutoComplete(wordBag, targetIndex) {
     ]);    
 }
 
+function PopulateRecentTokenDisplays(response) {
+    DisplayQuickSearchBar(response);
+    PopulateAutoComplete(response);
+    DisplayQuickInputBar(response);
+}
 function DisplayQuickSearchBar(response) {
     var quickSearchContainer = document.getElementById("QuickSearchContainer");
     quickSearchContainer.innerHTML = "";
@@ -883,16 +887,32 @@ function DisplayQuickSearchBar(response) {
             hashtagList.appendChild(CreateQuickSearchButton(response["tags"][i], true));
         }
         quickSearchContainer.appendChild(hashtagList);
-
-        // Add location links
-        //var locationList = document.createElement('div');
-        //locationList.classList.add("QuickLinksList");
-        //locationList.classList.add("noselect");
-        //for (var i = 0; i < Math.min(response["locations"].length, recentTokenDisplayCount) ; i++) {
-        //    locationList.appendChild(CreateQuickSearchButton(response["locations"][i]));
-        //}
-        //quickSearchContainer.appendChild(locationList);
     }
+}
+
+function DisplayQuickInputBar(response) {
+    var quickInputContainer = document.getElementById("QuickInputContainer");
+    quickInputContainer.innerHTML = "";
+
+    if (response != null) {
+        var recentTokenDisplayCount = usingMobileDevice ? MAXRECENTTOKENSTODISPLAYFORMOBILE : MAXRECENTTOKENSTODISPLAYFORBROWSER;
+        // Add hashtag links
+        var hashtagList = document.createElement('div');
+        hashtagList.classList.add("QuickLinksList");
+        hashtagList.classList.add("noselect");
+        for (var i = 0; i < Math.min(response["tags"].length, recentTokenDisplayCount) ; i++) {
+            hashtagList.appendChild(CreateQuickInputButton(response["tags"][i]));
+        }
+        quickInputContainer.appendChild(hashtagList);
+    }
+}
+
+function DisplayQuickInputContainer() {
+    document.getElementById("QuickInputContainer").style.display = "block";
+}
+
+function HideQuickInputContainer() {
+    document.getElementById("QuickInputContainer").style.display = "none";
 }
 
 function DateTimeToString(date) {
@@ -920,16 +940,7 @@ function CreateQuickSearchButton(text, addToNote, searchFor) {
     });
     var addToNoteAction = function () {
         if (addToNote != null && addToNote) {
-            // if the note text doesn't already contain the tag, add it
-            var noteText = document.getElementById('NoteContents').value;
-            if (noteText.indexOf(searchFor) == -1) {
-                if (noteText != "" && noteText.charAt(noteText.length - 1) != " ") {
-                    document.getElementById('NoteContents').value += " ";
-                }
-                document.getElementById('NoteContents').value += searchFor + " ";
-                document.getElementById('NoteContents').focus();
-                //placeCaretAtEnd(document.getElementById('NoteContents'));
-            }
+            AddTagToNoteContent(searchFor);
         }
         return false; /* prevent context menu from popping up */
     };
@@ -939,6 +950,40 @@ function CreateQuickSearchButton(text, addToNote, searchFor) {
         AddPressAndHoldListener(button, addToNoteAction);
     }
     return button;
+}
+
+
+function CreateQuickInputButton(tag) {
+    var button = document.createElement('input');
+    button.type = "submit";
+    button.className = "quickSearchButton";
+    button.value = tag;
+    button.addEventListener("click", function () {        
+        AddTagToNoteContent(tag);
+    });
+    var queryTagAction = function () {
+        document.getElementById('QueryContents').value = tag;
+        QueryNotes();
+        return false; /* prevent context menu from popping up */
+    };
+    // on right click
+    button.oncontextmenu = queryTagAction;
+    if (is_safari) {
+        AddPressAndHoldListener(button, queryTagAction);
+    }
+    return button;
+}
+
+function AddTagToNoteContent(tag) {
+    // if the note text doesn't already contain the tag, add it
+    var noteText = document.getElementById('NoteContents').value;
+    if (noteText.indexOf(tag) == -1) {
+        if (noteText != "" && noteText.charAt(noteText.length - 1) != " ") {
+            document.getElementById('NoteContents').value += " ";
+        }
+        document.getElementById('NoteContents').value += tag + " ";
+        document.getElementById('NoteContents').focus();
+    }
 }
 
 // Groups each note by their tags and displays them in each category
@@ -965,9 +1010,12 @@ function ReplaceHashtagsWithQuickLinks(noteText) {
 function ReplaceThisTagWithNothing(noteText, tag) {
     return noteText.replace(new RegExp(tag + "\s?", 'i'), "")
 }
-function ReplaceURLWithAnchor(noteText) {
-    var anchoredText = noteText.replace(new RegExp(/(http|ftp|https):\/\/(\S)+/ig), "<a href='$&' target='_blank'>$&</a> ");
+function ReplaceURLsWithMarkdownVersion(noteText) {
+    var anchoredText = noteText.replace(new RegExp(/\s(http|ftp|https):\/\/(\S)+/ig), " [$&]($&) ");
     return anchoredText;
+}
+function EscapeHtmlTags(noteText) {    
+    return noteText.replace(new RegExp("<", 'g'), "&lt;").replace(new RegExp(">", 'g'), "&gt;");
 }
 function HashTagClick(text) {
     document.getElementById('QueryContents').value = text;
@@ -1023,6 +1071,7 @@ function UpdateSearchBarLocation() {
 function DisplayNoteCharactersLeft() {
     var noteLength = document.getElementById("NoteContents").value.length;
     var lineCount = document.getElementById("NoteContents").value.lineCount();
+    // Adjust size of input field based on lineCount
     if (lineCount >= 4 && lineCount <= 10) {
         document.getElementById("NoteContents").style.height = (83.2 / 3 * lineCount) + "px";
     }
