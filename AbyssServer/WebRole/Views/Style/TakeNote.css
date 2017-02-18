@@ -52,7 +52,8 @@ textarea {
 
 #MenuListContainer {
     position:absolute;
-    top:2.5em;
+    top:3.1em;
+    left:.7em;
 }
 #MenuListContainer li {
     padding:.2em;
@@ -68,7 +69,7 @@ textarea {
    	-webkit-transform: translate(-50%); /* Safari */
 }
 #SearchBarContainer {
-    width:100%;
+    width:102%;
     height:9em;
     background: #0093b4;
     z-index:99;
@@ -237,11 +238,18 @@ textarea {
     word-break: break-word;
     white-space: pre-wrap;
 }
-.noteText p, ul, ol, menu, dir, h1, h2, h3, h4, h5, h6 { 
+.noteText ul, ol, menu, dir, h1, h2, h3, h4, h5, h6 { 
     display: inline-table;
     margin: 0em !important;
     -webkit-margin-before: 0em !important;
     -webkit-margin-after: 0em !important;
+    -webkit-margin-start: 0px !important;
+    -webkit-margin-end: 0px !important;    
+}
+.noteText p { 
+    display: inline-table;
+    -webkit-margin-before: .5em !important;
+    -webkit-margin-after: .5em !important;
     -webkit-margin-start: 0px !important;
     -webkit-margin-end: 0px !important;    
 }
@@ -262,10 +270,18 @@ textarea {
 .SaveEditButton {    
 }
 .DeleteNoteButton {
-    background-color:#855454 !important;    
+    background-color:#7aabab !important;    
+    background-image:url('../Images/trash_icon.png') !important;
+    background-size: 40% !important;
+    background-position:center !important;
+    width: 2em;
+    -webkit-filter: invert(100%); 
+    filter: invert(100%);
 }
 .CompleteButton {
     font-size: 1.3em;
+    position: relative;
+    bottom: .5em;
 }
 .noteText a {
     color: #000;
@@ -322,6 +338,27 @@ textarea {
         width: 100% !important;
         min-width:0em !important;
     }
+    #MenuListContainer {
+        left:.5em;
+        width:80%;
+        height:100%;
+        background-color:rgba(0, 0, 0, 0);
+    }
+    #MenuListContainer li {
+        width:auto;
+    }
+    #MenuListContainer div {
+        padding:1em 0em 1em 1em;
+        width:100%;
+    }
+    #BodyOverlay {
+        position:absolute;
+        top:0em;
+        left:0em;
+        width:100%;
+        height:100%;
+        background-color:rgba(255,255,255,.5);
+    }
     #SearchBarTable {
         width: 100%;
     }
@@ -339,6 +376,7 @@ textarea {
     }
     #QueryButton {
         margin-left: 0em;
+        margin-top: 0em;
     }
     .QuickLinksList {                
         overflow-x: auto;      

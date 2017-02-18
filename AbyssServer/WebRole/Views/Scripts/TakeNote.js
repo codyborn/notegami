@@ -1,5 +1,5 @@
 ﻿usingMobileDevice = false;
-if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
     usingMobileDevice = true;
 }
 
@@ -109,6 +109,21 @@ function NoteFacade(note, currentTag) {
             return false;
         }
 
+        // Filter notes on tokens if there exists local query tokens
+        if (MasterViewModel.noteListViewModel.currentQueryTokens().length > 0) {
+            var shouldBeVisible = false;
+            for (var i = 0; i < MasterViewModel.noteListViewModel.currentQueryTokens().length; i++) {
+                var token = MasterViewModel.noteListViewModel.currentQueryTokens()[i].toLowerCase();
+                if (self.note().originalText().toLowerCase().indexOf(token) >= 0) {
+                    shouldBeVisible = true;
+                    break;
+                }
+            }
+            if (!shouldBeVisible) {
+                return false;
+            }
+        }
+
         for (var i = 0; i < tags.length; i++) {
             if (tags[i].toLowerCase() == self.tag) {
                 return true;
@@ -117,17 +132,18 @@ function NoteFacade(note, currentTag) {
         return false;
     });
     self.formattedText = ko.computed(function () {
-        var taglessNote = ReplaceThisTagWithNothing(self.note().contents(), currentTag);
-        taglessNote = EscapeHtmlTags(taglessNote);
-        taglessNote = ReplaceHashtagsWithQuickLinks(taglessNote).trim();
-        //taglessNote = ReplaceURLsWithMarkdownVersion(taglessNote);
-        return showDownConverter.makeHtml(taglessNote);
+        var noteContents = ReplaceThisTagWithNothing(self.note().contents(), currentTag);
+        noteContents = EscapeHtmlTags(noteContents);
+        noteContents = ReplaceHashtagsWithQuickLinks(noteContents).trim();
+        //noteContents = ReplaceURLsWithMarkdownVersion(noteContents);
+        noteContents = showDownConverter.makeHtml(noteContents);
+        return ReplaceURLWithBlankTarget(noteContents);
     });
     self.smallerFont = ko.computed(function () {
         return self.formattedText().length > LARGEFONTMAXLENGTH;
     });
     self.editingNote = ko.observable(false);
-    self.pressAndHoldAction = function (noteFacade, evt) {        
+    self.pressAndHoldAction = function (noteFacade, evt) {
         self.setNoteToEditing(noteFacade, evt);
     };
     self.setNoteToEditing = function (noteFacade, evt) {
@@ -141,8 +157,7 @@ function NoteFacade(note, currentTag) {
         var textHeight = $(noteFacade).height();
         self.editingNote(true);
         // if one was previously editing, cancel the edit
-        if (MasterViewModel.noteListViewModel.editingNote != null)
-        {
+        if (MasterViewModel.noteListViewModel.editingNote != null) {
             MasterViewModel.noteListViewModel.editingNote.cancelEdit();
         }
         MasterViewModel.noteListViewModel.editingNote = self;
@@ -150,9 +165,9 @@ function NoteFacade(note, currentTag) {
             // the mobile keyboard will cover some of the results
             // this ensures that it's visible
             // wait 100ms to give time for re-adjustment due to keyboard
-            window.setTimeout(function(){
+            window.setTimeout(function () {
                 ScrollToElement(MasterViewModel.noteListViewModel.editingNoteTarget);
-        }, 100);
+            }, 100);
         }
         // focus on the textarea
         // will have to update this path if you change the html structure
@@ -161,7 +176,8 @@ function NoteFacade(note, currentTag) {
             noteFacade.parentElement.children[1].children[0].style.height = textHeight + "px";
         }
     };
-    self.cancelEdit = function () {self.note().contents(self.note().originalText());
+    self.cancelEdit = function () {
+        self.note().contents(self.note().originalText());
         self.editingNote(false);
         MasterViewModel.noteListViewModel.editingNote = null;
         RemoveWindowUnload();
@@ -197,13 +213,13 @@ function Note(id, text, timestamp, completed) {
     // allows only one facade to save the note at a time
     self.updating = false;
 
-    self.formattedTimestamp = ko.computed(function () {        
+    self.formattedTimestamp = ko.computed(function () {
         var date = new Date(self.timestamp);
         var minutes = date.getMinutes();
         if (minutes < 10) {
             minutes = "0" + minutes;
         }
-        var hour = date.getHours() >= 13 ? date.getHours() - 12 : date.getHours() == 0? 12 : date.getHours();
+        var hour = date.getHours() >= 13 ? date.getHours() - 12 : date.getHours() == 0 ? 12 : date.getHours();
         var timeString = hour + ":" + minutes;
         if (date.getHours() < 12) {
             timeString += "&nbsp;am";
@@ -218,7 +234,7 @@ function Note(id, text, timestamp, completed) {
         }
         else {
             timeString = "Today " + timeString;
-        }        
+        }
         return timeString;
     });
     self.getNoteTags = function () {
@@ -235,8 +251,7 @@ function NoteNode(tag) {
     self.notes = ko.observableArray();
     // sort notes first on completed, second on date
     self.sortedNotes = ko.computed(function () {
-        if (typeof self.notes() == "undefined")
-        {
+        if (typeof self.notes() == "undefined") {
             return self.notes();
         }
         return self.notes().sort(function (n1, n2) {
@@ -277,7 +292,7 @@ function NoteNode(tag) {
     };
 
     this.moveNote = function (elem) {
-        if (elem.nodeType == 1) {            
+        if (elem.nodeType == 1) {
             if (elem.offsetTop !== elem.saveOffsetTop) {
                 var tempElement = elem.cloneNode(true);
                 $(elem).css({ visibility: 'hidden' });
@@ -305,6 +320,27 @@ function NoteListViewModel() {
     // Associative array for quick lookup
     // Cannot use associative arrays in KO observable
     self.noteNodeTags = [];
+    // Tokenizes current query for dynamic updating of displayed notes
+    self.currentQueryTokens = ko.observableArray([]);
+    self.updateCurrentQueryContent = function (queryContents) {
+        if (queryContents.length > 3) {
+            var newQueryTokens = ko.observableArray([]);
+            var queryTokens = queryContents.split(' ');
+            for (var j = 0; j < queryTokens.length; j++) {
+                // Remove short tokens
+                if (queryTokens[j].length > 3) {
+                    newQueryTokens.push(queryTokens[j]);
+                }
+            }
+            self.currentQueryTokens(newQueryTokens());
+        }
+        else {
+            self.currentQueryTokens([]);
+        }
+    }
+    self.clearCurrentQueryContent = function () {
+        self.currentQueryTokens([]);
+    }
     self.queryContents;
     self.queryOccurred = ko.observable(false);
 
@@ -322,12 +358,10 @@ function NoteListViewModel() {
         // then each copy should be updated
 
         // If the NoteNode doesn't already exist, create it and add the notes from all other nodes
-        for (var i = 0; i < noteTags.length; i++)
-        {
+        for (var i = 0; i < noteTags.length; i++) {
             // Create a new NoteNode
             var lowerCaseTag = noteTags[i].toLowerCase();
-            if (self.noteNodeTags[lowerCaseTag] == null)
-            {
+            if (self.noteNodeTags[lowerCaseTag] == null) {
                 var newNoteNode = new NoteNode(noteTags[i]);
                 self.noteNodes.push(newNoteNode);
                 self.noteNodeTags[lowerCaseTag] = true;
@@ -335,10 +369,8 @@ function NoteListViewModel() {
                 // add each of its existing notes to this new noteNode
                 for (var j = 0; j < self.noteNodes.length; j++) {
                     var oldNoteNode = self.noteNodes[j];
-                    if (oldNoteNode.tag != noteTags[i])
-                    {
-                        for (var k = 0; k < oldNoteNode.notes.length; k++)
-                        {
+                    if (oldNoteNode.tag != noteTags[i]) {
+                        for (var k = 0; k < oldNoteNode.notes.length; k++) {
                             // clone note with new tag
                             var noteFacade = new NoteFacade(oldNoteNode.notes[k].note(), noteTags[i]);
                             newNoteNode.notes.push(noteFacade);
@@ -367,7 +399,7 @@ function NoteListViewModel() {
 
 
 // KO can only bind one object to the page
-MasterViewModel = {    
+MasterViewModel = {
     noteInputViewModel: new NoteInputViewModel(),
     noteListViewModel: new NoteListViewModel()
 }
@@ -420,10 +452,10 @@ function AddPressAndHoldListener(element, action) {
     }
     element.addEventListener(eventToListenTo, function (event) {
         // Prevent default behavior
-        //event.preventDefault();
+        event.preventDefault();
         // Test that the touch is correctly detected            
         // Timer for long touch detection
-        element.timerLongTouch = setTimeout(function () {                        
+        element.timerLongTouch = setTimeout(function () {
             action(event);
         }, 500);
     });
@@ -431,7 +463,7 @@ function AddPressAndHoldListener(element, action) {
     if (is_safari) {
         eventToListenTo = "touchmove";
     }
-    element.addEventListener(eventToListenTo, function (event) {        
+    element.addEventListener(eventToListenTo, function (event) {
         // If timerLongTouch is still running, then this is not a long touch 
         // (there is a move) so stop the timer
         clearTimeout(element.timerLongTouch);
@@ -442,8 +474,8 @@ function AddPressAndHoldListener(element, action) {
     }
     element.addEventListener(eventToListenTo, function () {
         // Prevent default behavior
-        //event.preventDefault();
-        
+        event.preventDefault();
+
         // If timerLongTouch is still running, then this is not a long touch
         // so stop the timer
         clearTimeout(element.timerLongTouch);
@@ -475,14 +507,13 @@ $(document).ready(function () {
         QueryNotes();
     }
     else {
-        DisplayRecentNotesFromCache();
         QueryRecentNotes();
     }
 });
 
 function LogOut() {
     var email = CacheStoreGet("email");
-    var authToken = CacheStoreGet("token");    
+    var authToken = CacheStoreGet("token");
     var authAttempt =
     {
         Email: email,
@@ -494,7 +525,7 @@ function LogOut() {
         url: "../user/LogOut",
         data: authAttempt,
         dataType: 'json'
-    });   
+    });
     localStorage.clear();
     ClearAuthToken();
     Redirect("Signup.html");
@@ -557,15 +588,14 @@ function CreateNote() {
 function UpdateNote(noteNodeObj) {
     // Prevent two facades from updating the same note
     // this can happen in the "complete" logic
-    if (noteNodeObj.note().updating)
-    {
+    if (noteNodeObj.note().updating) {
         return;
     }
     noteNodeObj.note().updating = true;
     // update each save button to display loading
     ShowLoadingByClassName("SaveEditButton");
     var noteContents = noteNodeObj.note().contents();
-    if (noteContents == "") {        
+    if (noteContents == "") {
         HideButtonImageByClassName("SaveEditButton");
         return;
     }
@@ -634,10 +664,8 @@ function DeleteNote(noteNodeObj) {
                         showError("Please log in to continue");
                     }) // on failure
             }
-            else
-            {
-                if (response == "RefreshRecent")
-                {
+            else {
+                if (response == "RefreshRecent") {
                     QueryRecentTokens();
                 }
                 noteNodeObj.onSuccessfulDelete();
@@ -653,60 +681,63 @@ function QueryRecentNotes() {
     yesterday.setDate(today.getDate() - 1);
     var lastWeek = new Date();
     lastWeek.setDate(today.getDate() - 7);
-    QueryNotes(DateToString(today) + "-" + DateToString(lastWeek), CacheAndDisplayRecentNotes);
+    QueryNotes(DateToString(today) + "-" + DateToString(lastWeek), CacheAndDisplayRecentNotes, "recentNotes");
 }
 
 // Only update display if the notes are different
 // Store latest response in cache
-function CacheAndDisplayRecentNotes(response) {
-    var cachedResponse = localStorage.getItem("recentNotes");    
+function CacheAndDisplayRecentNotes(response, queryWords) {
+    var cachedResponse = localStorage.getItem(queryWords);
     if (cachedResponse != null) {
         var parsedResponse = JSON.parse(cachedResponse);
         // equivalence check        
         if (parsedResponse.length != response.Notes.length) {
-            localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
+            localStorage.setItem(queryWords, JSON.stringify(response.Notes));
             DisplayResults(response.Notes);
             return;
         }
         for (var i = 0; i < parsedResponse.length; i++) {
             if (parsedResponse[i].RowKey != response.Notes[i].RowKey ||
                 parsedResponse[i].Timestamp != response.Notes[i].Timestamp) {
-                localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
+                localStorage.setItem(queryWords, JSON.stringify(response.Notes));
                 DisplayResults(response.Notes);
                 return;
             }
-        }        
+        }
     }
     else {
-        localStorage.setItem("recentNotes", JSON.stringify(response.Notes));
+        localStorage.setItem(queryWords, JSON.stringify(response.Notes));
         DisplayResults(response.Notes);
     }
 }
 
 function SearchCachedNotes() {
-    var queryContents = document.getElementById('QueryContents').value;
-    if (queryContents.length > 3) {
-
-    }
+    var queryContents = document.getElementById('QueryContents').value;    
+    MasterViewModel.noteListViewModel.updateCurrentQueryContent(queryContents);
+    //if (queryContents.length > 3) {
+    //    var cachedResponse = localStorage.getItem("recentNotes");
+    //    DisplayResults(cachedResponse);
+    //}
 }
 
-// Allows for quickly grabbing the most recent notes from the local cache
-function DisplayRecentNotesFromCache() {
-    var cachedResponse = localStorage.getItem("recentNotes");
-    if (cachedResponse != null) {
-        var parsedResponse = JSON.parse(cachedResponse);
-        DisplayResults(parsedResponse);
-    }
-}
-
-function QueryNotes(queryContents, callBackOnSuccess) {
+function QueryNotes(queryContents, callBackOnSuccess, reportedQueryContents) {    
     var fromUserInput = false;
     if (typeof queryContents == "undefined") {
         queryContents = document.getElementById("QueryContents").value;
         fromUserInput = true;
     }
-    
+
     if (queryContents != "") {
+        // Allows for quickly grabbing the most recent notes from the local cache        
+        if (typeof reportedQueryContents == "undefined") {
+            reportedQueryContents = queryContents;
+        }
+        var cachedResponse = localStorage.getItem(reportedQueryContents);
+        if (cachedResponse != null) {
+            var parsedResponse = JSON.parse(cachedResponse);
+            DisplayResults(parsedResponse);
+        }
+
         if (fromUserInput) {
             ShowLoading("QueryButton");
         }
@@ -724,18 +755,18 @@ function QueryNotes(queryContents, callBackOnSuccess) {
             data: data,
             success: function (response) {
                 if (response.Status == "Success") {
-                    if (typeof callBackOnSuccess == "undefined") {                        
+                    if (typeof callBackOnSuccess == "undefined") {
                         MasterViewModel.noteListViewModel.queryOccurred(true);
-                        DisplayResults(response.Notes, queryContents);
+                        DisplayResults(response.Notes);
                     }
                     else {
-                        callBackOnSuccess(response);
+                        callBackOnSuccess(response, reportedQueryContents);
                     }
                 }
                 else if (response.Status == "Expired") {
                     // Auth token has expired
                     AuthUserAndSetCookie(email, CacheStoreGet("password"),
-                            function () { QueryNotes(queryContents, callBackOnSuccess); }, // on success
+                            function () { QueryNotes(queryContents, callBackOnSuccess, reportedQueryContents); }, // on success
                             function () {
                                 Redirect('Signup.html');
                                 showError("Please log in to continue");
@@ -794,7 +825,7 @@ function DeleteRecentTokens(token) {
 }
 
 function PopulateAutoComplete(response) {
-    
+
     if (response != null) {
         var tagsAndLocations = response["tags"].concat(response["locations"]);
         AddWordsToInputAutoComplete(tagsAndLocations, "QueryContents");
@@ -825,7 +856,7 @@ function AddWordsToInputAutoComplete(wordBag, targetIndex) {
             return word + ' ';
         }
     }
-    ]);    
+    ]);
 }
 
 function PopulateRecentTokenDisplays(response) {
@@ -843,9 +874,9 @@ function DisplayQuickSearchBar(response) {
     var lastWeek = new Date();
     lastWeek.setDate(today.getDate() - 7);
     var dateList = document.createElement('div');
-    dateList.appendChild(CreateQuickSearchButton("Today", false, DateToString(today)));
-    dateList.appendChild(CreateQuickSearchButton("Yesterday", false, DateToString(yesterday)));
-    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, DateToString(today) + "-" + DateToString(lastWeek)));
+    dateList.appendChild(CreateQuickSearchButton("Today", false, DateToString(today), false));
+    dateList.appendChild(CreateQuickSearchButton("Yesterday", false, DateToString(yesterday), false));
+    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, DateToString(today) + "-" + DateToString(lastWeek), false));
     quickSearchContainer.appendChild(dateList);
 
     if (response != null) {
@@ -855,7 +886,7 @@ function DisplayQuickSearchBar(response) {
         hashtagList.classList.add("QuickLinksList");
         hashtagList.classList.add("noselect");
         for (var i = 0; i < Math.min(response["tags"].length, recentTokenDisplayCount) ; i++) {
-            hashtagList.appendChild(CreateQuickSearchButton(response["tags"][i], true));
+            hashtagList.appendChild(CreateQuickSearchButton(response["tags"][i], true, null, true));
         }
         quickSearchContainer.appendChild(hashtagList);
     }
@@ -897,7 +928,7 @@ function DateToString(date) {
     return mm + "/" + dd + "/" + yyyy;
 }
 
-function CreateQuickSearchButton(text, addToNote, searchFor) {
+function CreateQuickSearchButton(text, addToNote, searchFor, searchCachedNotes) {
     if (searchFor == null || searchFor == "") {
         searchFor = text;
     }
@@ -907,6 +938,10 @@ function CreateQuickSearchButton(text, addToNote, searchFor) {
     button.value = text;
     button.addEventListener("click", function () {
         document.getElementById('QueryContents').value = searchFor;
+        if (searchCachedNotes) {
+            // Update local tokens to current search input
+            SearchCachedNotes();
+        }
         QueryNotes();
     });
     var addToNoteAction = function () {
@@ -929,7 +964,7 @@ function CreateQuickInputButton(tag) {
     button.type = "submit";
     button.className = "quickSearchButton";
     button.value = tag;
-    button.addEventListener("click", function () {        
+    button.addEventListener("click", function () {
         AddTagToNoteContent(tag);
     });
     var queryTagAction = function () {
@@ -965,8 +1000,8 @@ function DisplayResults(response, queryContents) {
     MasterViewModel.noteListViewModel.clearNotes();
     if (response.length > 0) {
         // let's us know which nodes to show
-        MasterViewModel.noteListViewModel.queryContents = queryContents;
-        for (var i = response.length-1; i >= 0; i--) {
+        MasterViewModel.noteListViewModel.queryContents = queryContents;        
+        for (var i = response.length - 1; i >= 0; i--) {            
             MasterViewModel.noteListViewModel.addNote(response[i].RowKey, response[i].EncodedNote, response[i].Timestamp, response[i].Completed);
         }
         //ScrollToBottom();
@@ -974,6 +1009,10 @@ function DisplayResults(response, queryContents) {
     }
 }
 
+function ReplaceURLWithBlankTarget(noteText) {
+    var hashTagLinkedText = noteText.replace(new RegExp(/<a /ig), "<a target='_blank'");
+    return hashTagLinkedText;
+}
 function ReplaceHashtagsWithQuickLinks(noteText) {
     var hashTagLinkedText = noteText.replace(new RegExp(/#(\w+)/ig), "<a href='#' onclick='HashTagClick(\"#$1\");'>#$1</a> ");
     return hashTagLinkedText;
@@ -985,7 +1024,7 @@ function ReplaceURLsWithMarkdownVersion(noteText) {
     var anchoredText = noteText.replace(new RegExp(/\s(http|ftp|https):\/\/(\S)+/ig), " [$&]($&) ");
     return anchoredText;
 }
-function EscapeHtmlTags(noteText) {    
+function EscapeHtmlTags(noteText) {
     return noteText.replace(new RegExp("<", 'g'), "&lt;").replace(new RegExp(">", 'g'), "&gt;");
 }
 function HashTagClick(text) {
@@ -1004,8 +1043,7 @@ function ScrollToElement(element) {
 var lastScrollPos = null;
 var currentSearchContainerPos = 0;
 function UpdateSearchBarLocation() {
-    if (!usingMobileDevice)
-    {
+    if (!usingMobileDevice) {
         return;
     }
     // ignore scrolling performed by the JS
@@ -1020,7 +1058,7 @@ function UpdateSearchBarLocation() {
     var scrollDiff = results.scrollTop - lastScrollPos;
     lastScrollPos = results.scrollTop;
     var searchContainer = document.getElementById("SearchBarContainer");
-    var searchContainerHeight = searchContainer.getBoundingClientRect().height-5;
+    var searchContainerHeight = searchContainer.getBoundingClientRect().height - 5;
     // if scrolling down and the search bar is at the peak
     // or scrolling up and the search bar is at the origin, then return
     if ((scrollDiff > 0 && currentSearchContainerPos == -searchContainerHeight) ||
@@ -1028,15 +1066,14 @@ function UpdateSearchBarLocation() {
         return;
     }
     currentSearchContainerPos = currentSearchContainerPos - scrollDiff;
-    if (currentSearchContainerPos > 0)
-    {
+    if (currentSearchContainerPos > 0) {
         currentSearchContainerPos = 0;
     }
     if (currentSearchContainerPos < -searchContainerHeight) {
         currentSearchContainerPos = -searchContainerHeight;
     }
     searchContainer.style.top = currentSearchContainerPos + "px";
-    results.style.marginTop = (currentSearchContainerPos+searchContainerHeight+20) + "px";
+    results.style.marginTop = (currentSearchContainerPos + searchContainerHeight + 20) + "px";
 }
 
 function DisplayNoteCharactersLeft() {
@@ -1080,16 +1117,20 @@ function PreventFOUC() {
 /* Menu Controls */
 function ToggleMenu() {
     var menuList = document.getElementById('MenuListContainer');
-    if (menuList.style.display == "none") {
-        menuList.style.display = "inline";
+    if ($(MenuListContainer).is(":hidden")) {
+
+        if (usingMobileDevice) {
+            document.getElementById('BodyOverlay').style.display = "inline";
+        }
+        $(MenuListContainer).animate({ width: 'toggle' }, 200);
     }
     else {
-        menuList.style.display = "none";
+        CloseMenu();
     }
 }
 function CloseMenu() {
-    var menuList = document.getElementById('MenuListContainer');
-    menuList.style.display = "none";
+    $(MenuListContainer).animate({ width: 'hide' }, 200);
+    document.getElementById('BodyOverlay').style.display = "none";
 }
 
 function LeaveFeedback() {

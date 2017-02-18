@@ -185,6 +185,7 @@
     <Content Include="Views\Images\search_icon.png" />
     <Content Include="Views\Images\send_icon.png" />
     <Content Include="Views\Images\splash_icon.png" />
+    <Content Include="Views\Images\trash_icon.png" />
     <Content Include="Views\Images\windows.png" />
     <Content Include="Views\PasswordReset.html" />
     <Content Include="Views\PrivacyPolicy.html" />

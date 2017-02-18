@@ -226,13 +226,28 @@ namespace WebRole
                     }
                     notes.Add(queriedNote);
                 }
-                return notes;
+                return RemoveIndicesFromResponse(notes);
             }
             else
             {
                 IEnumerable<Note> allNotes = TableStore.GetAllEntitiesInAPartition<Note>(TableStore.TableName.notes, userId);
-                return allNotes.Where<Note>((n) => noteKeys.Contains(n.RowKey));
+                IEnumerable<Note> notesOfInterest = allNotes.Where<Note>((n) => noteKeys.Contains(n.RowKey));
+                return RemoveIndicesFromResponse(notesOfInterest);
             }
+        }
+
+        /// <summary>
+        /// Cleanup the indices from the response
+        /// </summary>
+        private static IEnumerable<Note> RemoveIndicesFromResponse(IEnumerable<Note> notes)
+        {
+            List<Note> cleanedNotes = new List<Note>();
+            foreach (Note n in notes)
+            {
+                n.Indices = null;                
+                cleanedNotes.Add(n);
+            }
+            return cleanedNotes;
         }
 
         /// <summary>
