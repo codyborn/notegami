@@ -193,6 +193,8 @@
     <Content Include="Views\Scripts\Common.js" />
     <Content Include="Views\Scripts\ko.observableDictionary.js" />
     <Content Include="Views\Scripts\Location.js" />
+    <Content Include="Views\Scripts\NoteServerOperations.js" />
+    <Content Include="Views\Scripts\NoteViewModel.js" />
     <Content Include="Views\Scripts\TakeNote.js" />
     <Content Include="Views\SignUp.html" />
     <Content Include="Views\Style\images\ui-icons_444444_256x240.png" />
@@ -203,6 +205,7 @@
     <Content Include="Views\Style\images\ui-icons_ffffff_256x240.png" />
     <Content Include="Views\Style\jquery-ui.css" />
     <Content Include="Views\Style\jquery-ui.theme.css" />
+    <Content Include="Views\Scripts\LocalCachedNotes.js" />
     <Content Include="Views\Style\NightTheme.css" />
     <Content Include="Views\Style\SignUp.css" />
     <Content Include="Views\Style\Style.css" />

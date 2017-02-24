@@ -52,13 +52,20 @@ namespace WebRole.Controllers
             public string AuthToken { get; set; }
             public string Token { get; set; }
         }
+        public class CreateUpdateNoteResponse
+        {
+            public string Status { get; set; }
+            public Note Note { get; set; }
+        }
 
         [HttpPost]
-        public string CreateNote([FromBody]CreateNoteAction createNote)
+        public CreateUpdateNoteResponse CreateNote([FromBody]CreateNoteAction createNote)
         {
+            CreateUpdateNoteResponse response = new CreateUpdateNoteResponse();
+            response.Status = string.Empty;
             if (string.IsNullOrEmpty(createNote.Email))
             {
-                return string.Empty;
+                return response;
             }
             using (RequestTracker request = new RequestTracker(Constant.RequestAPI.CreateNote.ToString(), createNote.Email))
             {
@@ -70,12 +77,15 @@ namespace WebRole.Controllers
                         !createNote.UTCOffset.HasValue)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
-                        return string.Empty;
+                        
+                        return response;
                     }
                     if (createNote.NoteContents.Length > Constant.MaxNoteLength)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
-                        return "TooLong";
+
+                        response.Status = "TooLong";
+                        return response;
                     }
                     // Use the email and authToken to get the userId
                     string userId = UserController.GetUserId(createNote.Email, createNote.AuthToken);
@@ -83,26 +93,31 @@ namespace WebRole.Controllers
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         // Expired AuthToken
-                        return "Expired";
+                        response.Status = "Expired";
+                        return response;
                     }
-                    IndexerBase.CreateNote(userId, (int)createNote.UTCOffset, createNote.NoteContents, createNote.Location, createNote.Email);
-                    return "Success";
+                    response.Note = IndexerBase.CreateNote(userId, (int)createNote.UTCOffset, createNote.NoteContents, createNote.Location, createNote.Email);
+                    response.Status = "Success";
+                    return response;
                 }
                 catch (Exception e)
                 {
                     request.response = RequestTracker.RequestResponse.ServerError;
                     ExceptionTracker.LogException(e);
-                    return string.Empty;
+                    return response;
                 }
             }
         }
 
         [HttpPost]
-        public string UpdateNote([FromBody]UpdateNoteAction updateNote)
+        public CreateUpdateNoteResponse UpdateNote([FromBody]UpdateNoteAction updateNote)
         {
+            CreateUpdateNoteResponse response = new CreateUpdateNoteResponse();
+            response.Status = string.Empty;
+
             if (string.IsNullOrEmpty(updateNote.Email))
             {
-                return string.Empty;
+                return response;
             }
             using (RequestTracker request = new RequestTracker(Constant.RequestAPI.UpdateNote.ToString(), updateNote.Email))
             {
@@ -115,12 +130,13 @@ namespace WebRole.Controllers
                         !updateNote.UTCOffset.HasValue)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
-                        return string.Empty;
+                        return response;
                     }
                     if (updateNote.NoteContents.Length > Constant.MaxNoteLength)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
-                        return "TooLong";
+                        response.Status = "TooLong";
+                        return response;
                     }
                     // Use the email and authToken to get the userId
                     string userId = UserController.GetUserId(updateNote.Email, updateNote.AuthToken);
@@ -128,16 +144,18 @@ namespace WebRole.Controllers
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         // Expired AuthToken
-                        return "Expired";
+                        response.Status = "Expired";
+                        return response;
                     }
-                    IndexerBase.UpdateNote(userId, (int)updateNote.UTCOffset, updateNote.RowKey, updateNote.NoteContents, updateNote.Location, updateNote.Completed);
-                    return "Success";
+                    response.Note = IndexerBase.UpdateNote(userId, (int)updateNote.UTCOffset, updateNote.RowKey, updateNote.NoteContents, updateNote.Location, updateNote.Completed);
+                    response.Status = "Success";
+                    return response;
                 }
                 catch (Exception e)
                 {
                     request.response = RequestTracker.RequestResponse.ServerError;
                     ExceptionTracker.LogException(e);
-                    return string.Empty;
+                    return response;
                 }
             }
         }

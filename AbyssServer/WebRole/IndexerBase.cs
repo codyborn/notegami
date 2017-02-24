@@ -254,7 +254,7 @@ namespace WebRole
         /// Separated out for testing w/o worrying about auth
         /// Creates note in DB and indexes tokens
         /// </summary>
-        public static void CreateNote(string userId, int utcOffset, string noteContents, string location, string email)
+        public static Note CreateNote(string userId, int utcOffset, string noteContents, string location, string email)
         {
             Note note = new Note();
             note.RowKey = Note.GenerateRowKey();
@@ -274,6 +274,7 @@ namespace WebRole
             new ActionRunner().RunActions(email, DateTime.UtcNow, noteContents, location);
 
             TableStore.Set(TableStore.TableName.notes, note);
+            return note;
         }
 
         /// <summary>
@@ -304,13 +305,13 @@ namespace WebRole
         /// Locates previous note and updates indices and note
         /// </summary>
         /// <returns>false if note cannot be found</returns>
-        public static bool UpdateNote(string userId, int utcOffset, string noteKey, string noteContents, string location, bool completed)
+        public static Note UpdateNote(string userId, int utcOffset, string noteKey, string noteContents, string location, bool completed)
         {
             // If note doesn't exist, fail
             Note retrievedNote = null;
             if (!TableStore.Get<Note>(TableStore.TableName.notes, userId, noteKey, out retrievedNote))
             {
-                return false;
+                return null;
             }
             // Check note's indexindex list for backwards compatibility
             if (retrievedNote.Indices == null)
@@ -327,7 +328,7 @@ namespace WebRole
             IndexNote(noteContents, localTime, location, userId, retrievedNote);
             retrievedNote.Completed = completed;
             TableStore.Update(TableStore.TableName.notes, retrievedNote);
-            return true;
+            return retrievedNote;
         }
 
         /// <summary>
