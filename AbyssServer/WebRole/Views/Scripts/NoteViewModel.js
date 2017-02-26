@@ -25,7 +25,7 @@ function NoteFacade(note, currentTag) {
             var shouldBeVisible = false;
             for (var i = 0; i < MasterViewModel.noteListViewModel.currentQueryTokens().length; i++) {
                 var token = MasterViewModel.noteListViewModel.currentQueryTokens()[i].toLowerCase();
-                if (self.note().originalText().toLowerCase().indexOf(token) >= 0 || AreDatesEqual(self.note().timestamp, token)) {
+                if (self.note().originalText().toLowerCase().indexOf(token) >= 0 || AreDatesEqualOrContained(self.note().timestamp, token)) {
                     shouldBeVisible = true;
                     break;
                 }
@@ -254,11 +254,33 @@ function NoteListViewModel() {
     }
     self.queryContents;
     self.queryOccurred = ko.observable(false);
+    // Key is noteId, value is timestamp
+    self.currentDisplayedNotes = new Array();
 
     // Operations
-    self.clearNotes = function () {
-        self.noteNodes([]);
-        self.noteNodeTags = [];
+    self.mergeNotes = function (notes, queryContents) {
+        // clone the existing displayed notes and clear the contents to be filled below
+        var currentDisplayedNotes_clone = $.extend({}, self.currentDisplayedNotes);
+        self.currentDisplayedNotes = new Array();
+
+        self.queryContents = queryContents;
+        for (var i = notes.length - 1; i >= 0; i--) {
+            // If the note to be displayed doesn't exist or is out of date, attempt to remove and add it
+            if (typeof currentDisplayedNotes_clone[notes[i].RowKey] == "undefined" ||
+                currentDisplayedNotes_clone[notes[i].RowKey] != notes[i].Timestamp) {
+                self.removeNote(notes[i].RowKey);
+                self.currentDisplayedNotes[notes[i].RowKey] = notes[i].Timestamp;
+                MasterViewModel.noteListViewModel.addNote(notes[i].RowKey, notes[i].EncodedNote, notes[i].Timestamp, notes[i].Completed);
+            }
+            // remove it from the cloned list so that we know it's been checked
+            currentDisplayedNotes_clone[notes[i].RowKey] = null;
+        }
+        // Cleanup notes that were not seen
+        for (var key in currentDisplayedNotes_clone) {
+            if (currentDisplayedNotes_clone[key] != null) {
+                self.removeNote(key);
+            }
+        }
     }
     self.addNote = function (id, contents, timestamp, completed) {
         // figure out which noteNodes this note belongs to
@@ -298,7 +320,19 @@ function NoteListViewModel() {
             self.noteNodes()[j].notes.push(noteFacade);
         }
     }
-
+    // Attempt to remove note from nodes
+    // If key doesn't exist, ignore and return
+    // If a noteNode doesn't contain any keys, then it will not be visible
+    self.removeNote = function (id) {
+        // Check each note facade in each note node
+        for (var i = 0; i < self.noteNodes().length; i++) {
+            for (var j = 0; j < self.noteNodes()[i].notes().length; j++) {
+                if (self.noteNodes()[i].notes()[j].note().noteId == id) {
+                    self.noteNodes()[i].notes().splice(j, 1);
+                }
+            }
+        }
+    }
     self.queryTag = function (noteNode) {
         if (noteNode.tag != UNCATEGORIZEDTAG) {
             HashTagClick(noteNode.tag);

@@ -101,4 +101,13 @@ function SearchCachedNotes() {
     }
     MasterViewModel.noteListViewModel.updateCurrentQueryContent(queryContents);
 }
-
+// Prevents searching after each character press which can be UI intensive
+// Waits for user to pause
+var typingBuffer = 300;
+var keyUpTimeOut;
+function SearchCachedNotesWithBuffer() {
+    if (typeof keyUpTimeOut != "undefined") {
+        window.clearTimeout(keyUpTimeOut);
+    }
+    keyUpTimeOut = window.setTimeout(function () { SearchCachedNotes() }, typingBuffer);
+}

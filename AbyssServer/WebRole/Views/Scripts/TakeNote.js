@@ -216,7 +216,7 @@ function DisplayQuickSearchBar(response) {
     var dateList = document.createElement('div');
     dateList.appendChild(CreateQuickSearchButton("Today", false, DateToString(today), true));
     dateList.appendChild(CreateQuickSearchButton("Yesterday", false, DateToString(yesterday), true));
-    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, DateToString(today) + "-" + DateToString(lastWeek), true));
+    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, DateToString(lastWeek) + "-" + DateToString(today), true));
     quickSearchContainer.appendChild(dateList);
 
     if (response != null) {
@@ -333,16 +333,10 @@ function AddTagToNoteContent(tag) {
 
 // Groups each note by their tags and displays them in each category
 // if the user is querying for some specific tags, only display those
-function DisplayResults(response, queryContents) {
-    // if queryExact is not empty, we only show tags contained in the query contents
-    var queryExact = new Array();
-    MasterViewModel.noteListViewModel.clearNotes();
+function DisplayResults(response, queryContents) {        
     if (response.length > 0) {
         // let's us know which nodes to show
-        MasterViewModel.noteListViewModel.queryContents = queryContents;        
-        for (var i = response.length - 1; i >= 0; i--) {            
-            MasterViewModel.noteListViewModel.addNote(response[i].RowKey, response[i].EncodedNote, response[i].Timestamp, response[i].Completed);
-        }
+        MasterViewModel.noteListViewModel.mergeNotes(response, queryContents);
         //ScrollToBottom();
         LimitTextAreaMaxLength();
     }

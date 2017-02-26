@@ -249,9 +249,31 @@ function placeCaretAtEnd(el) {
 String.prototype.lines = function () { return this.split(/\r*\n/); }
 String.prototype.lineCount = function () { return this.lines().length - (navigator.userAgent.indexOf("MSIE") != -1); }
 
-function AreDatesEqual(dateString1, dateString2) {
-    if (isNaN(Date.parse(dateString1)) || isNaN(Date.parse(dateString2))) {
+function AreDatesEqualOrContained(dateString1, dateString2) {
+
+    if (isNaN(Date.parse(dateString1))) {
         return false;
+    }
+    if (isNaN(Date.parse(dateString2))) {
+        // Check if the second value is a date range
+        if (dateString2.indexOf('-') >= 0) {
+            var dateTokens = dateString2.split('-');
+            if (dateTokens.length != 2) {
+                return false;
+            }
+            if (isNaN(Date.parse(dateString1)) || isNaN(Date.parse(dateTokens[0])) || isNaN(Date.parse(dateTokens[1]))) {
+                return false;
+            }
+            var startDate = new Date(Date.parse(dateTokens[0]));
+            var endDate = new Date(Date.parse(dateTokens[1]));
+            var firstDate = new Date(Date.parse(dateString1));
+            return ((firstDate.getDate() >= startDate.getDate() &&
+                firstDate.getMonth() >= startDate.getMonth() &&
+                firstDate.getFullYear() >= startDate.getFullYear()) &&
+                (firstDate.getDate() <= endDate.getDate() &&
+                firstDate.getMonth() <= endDate.getMonth() &&
+                firstDate.getFullYear() <= endDate.getFullYear()));
+        }        
     }
     var firstDate = new Date(Date.parse(dateString1));
     var secondDate = new Date(Date.parse(dateString2));
