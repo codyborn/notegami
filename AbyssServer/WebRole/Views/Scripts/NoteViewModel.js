@@ -51,7 +51,7 @@ function NoteFacade(note, currentTag) {
         return ReplaceURLWithBlankTarget(noteContents);
     });
     self.smallerFont = ko.computed(function () {
-        return self.formattedText().length > LARGEFONTMAXLENGTH;
+        return self.note().contents().length > LARGEFONTMAXLENGTH;
     });
     self.editingNote = ko.observable(false);
     self.pressAndHoldAction = function (noteFacade, evt) {
@@ -233,21 +233,15 @@ function NoteListViewModel() {
     self.noteNodeTags = [];
     // Tokenizes current query for dynamic updating of displayed notes
     self.currentQueryTokens = ko.observableArray([]);
-    self.updateCurrentQueryContent = function (queryContents) {
-        if (queryContents.length > 3) {
-            var newQueryTokens = ko.observableArray([]);
-            var queryTokens = queryContents.split(' ');
-            for (var j = 0; j < queryTokens.length; j++) {
-                // Remove short tokens
-                if (queryTokens[j].length > 3) {
-                    newQueryTokens.push(queryTokens[j]);
-                }
+    self.updateCurrentQueryContent = function (queryContents) {        
+        var newQueryTokens = ko.observableArray([]);
+        var queryTokens = queryContents.split(' ');
+        for (var j = 0; j < queryTokens.length; j++) {
+            if (queryTokens[j].length > 0) {
+                newQueryTokens.push(queryTokens[j]);
             }
-            self.currentQueryTokens(newQueryTokens());
         }
-        else {
-            self.currentQueryTokens([]);
-        }
+        self.currentQueryTokens(newQueryTokens());
     }
     self.clearCurrentQueryContent = function () {
         self.currentQueryTokens([]);
@@ -262,9 +256,20 @@ function NoteListViewModel() {
         // clone the existing displayed notes and clear the contents to be filled below
         var currentDisplayedNotes_clone = $.extend({}, self.currentDisplayedNotes);
         self.currentDisplayedNotes = new Array();
+        // clone the existing note nodes to keep track of what should be removed
+        var currentNoteNodeTags = $.extend({}, self.noteNodeTags);
 
         self.queryContents = queryContents;
         for (var i = notes.length - 1; i >= 0; i--) {
+            // create a dummy note object to get the note tags
+            var newNote = new Note("dummy", Urldecode(notes[i].EncodedNote), null, false);
+            var noteTags = newNote.getNoteTags();
+            // track which tags we haven't seen by removing the ones we do see from the tracking list
+            for (var j = 0; j < noteTags.length; j++) {
+                var lowerCaseTag = noteTags[j].toLowerCase();
+                currentNoteNodeTags[lowerCaseTag] = null;
+            }
+
             // If the note to be displayed doesn't exist or is out of date, attempt to remove and add it
             if (typeof currentDisplayedNotes_clone[notes[i].RowKey] == "undefined" ||
                 currentDisplayedNotes_clone[notes[i].RowKey] != notes[i].Timestamp) {
@@ -281,6 +286,20 @@ function NoteListViewModel() {
                 self.removeNote(key);
             }
         }
+        // Cleanup nodes that were not seen
+        for (var tag in currentNoteNodeTags) {
+            if (currentNoteNodeTags[tag] != null) {
+                // seek and destroy
+                for (var j = 0; j < self.noteNodes().length; j++) {
+                    if (self.noteNodes()[j].tag == tag) {
+                        self.noteNodes().splice(j, 1);
+                        self.noteNodeTags[tag] = null;
+                        break;
+                    }
+                }
+            }
+        }
+
     }
     self.addNote = function (id, contents, timestamp, completed) {
         // figure out which noteNodes this note belongs to
@@ -296,7 +315,7 @@ function NoteListViewModel() {
             var lowerCaseTag = noteTags[i].toLowerCase();
             if (self.noteNodeTags[lowerCaseTag] == null) {
                 var newNoteNode = new NoteNode(noteTags[i]);
-                self.noteNodes.push(newNoteNode);
+                self.noteNodes.push(newNoteNode);                
                 self.noteNodeTags[lowerCaseTag] = true;
                 // foreach noteNode that is not the new one,
                 // add each of its existing notes to this new noteNode
@@ -354,21 +373,26 @@ ko.bindingHandlers.pressAndHold = {
     // This will be called when the binding is first applied to an element
     // Set up any initial state, event handlers, etc. here        
     init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
-        // press and hold triggers oncontextmenu()        
-        if (usingMobileDevice) {
-            AddPressAndHoldListener(element,
+        AddClickListener(element,
                 function (event) {
                     var value = valueAccessor();
                     value(element, event);
                 });
-        }
-        else {
-            AddClickListener(element,
-                            function (event) {
-                                var value = valueAccessor();
-                                value(element, event);
-                            });
-        }
+        //// press and hold triggers oncontextmenu()        
+        //if (usingMobileDevice) {
+        //    AddPressAndHoldListener(element,
+        //        function (event) {
+        //            var value = valueAccessor();
+        //            value(element, event);
+        //        });
+        //}
+        //else {
+        //    AddClickListener(element,
+        //                    function (event) {
+        //                        var value = valueAccessor();
+        //                        value(element, event);
+        //                    });
+        //}
     }
 };
 ko.bindingHandlers.slideIn = {

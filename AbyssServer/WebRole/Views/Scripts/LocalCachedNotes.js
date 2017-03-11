@@ -1,4 +1,5 @@
 ﻿var cachedNotes = new CachedNotes();
+var displayingRecentNotes = false;
 var lastUpdatedCachedNotes = new Date();
 // one day in milliseconds
 var one_day = 1000 * 60 * 60 * 24;

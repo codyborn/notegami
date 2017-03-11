@@ -334,7 +334,7 @@ function AddTagToNoteContent(tag) {
 // Groups each note by their tags and displays them in each category
 // if the user is querying for some specific tags, only display those
 function DisplayResults(response, queryContents) {        
-    if (response.length > 0) {
+    if (response != null && response.length > 0) {
         // let's us know which nodes to show
         MasterViewModel.noteListViewModel.mergeNotes(response, queryContents);
         //ScrollToBottom();
