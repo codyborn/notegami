@@ -22,11 +22,11 @@ function NoteFacade(note, currentTag) {
 
         // Filter notes on tokens if there exists local query tokens
         if (MasterViewModel.noteListViewModel.currentQueryTokens().length > 0) {
-            var shouldBeVisible = false;
+            var shouldBeVisible = true;
             for (var i = 0; i < MasterViewModel.noteListViewModel.currentQueryTokens().length; i++) {
                 var token = MasterViewModel.noteListViewModel.currentQueryTokens()[i].toLowerCase();
-                if (self.note().originalText().toLowerCase().indexOf(token) >= 0 || AreDatesEqualOrContained(self.note().timestamp, token)) {
-                    shouldBeVisible = true;
+                if (!(self.note().originalText().toLowerCase().indexOf(token) >= 0 || AreDatesEqualOrContained(self.note().timestamp, token))) {
+                    shouldBeVisible = false;
                     break;
                 }
             }
@@ -163,10 +163,19 @@ function Note(id, text, timestamp, completed) {
         return [UNCATEGORIZEDTAG];
     };
 }
+
 function NoteNode(tag) {
     var self = this;
     self.tag = tag;
     self.notes = ko.observableArray();
+    self.latestTimestamp = ko.observable(new Date(0));
+    self.addNote = function (noteFacade) {
+        var noteDate = new Date(noteFacade.note().timestamp);
+        if (noteDate > self.latestTimestamp()) {
+            self.latestTimestamp(noteDate);
+        }
+        self.notes.push(noteFacade);
+    }
     // sort notes first on completed, second on date
     self.sortedNotes = ko.computed(function () {
         if (typeof self.notes() == "undefined") {
@@ -241,6 +250,21 @@ function NoteListViewModel() {
     self.noteNodeTags = [];
     // Tokenizes current query for dynamic updating of displayed notes
     self.currentQueryTokens = ko.observableArray([]);
+
+    // sort notes first on completed, second on date
+    self.sortedNoteNodes = ko.computed(function () {
+        if (typeof self.noteNodes() == "undefined") {
+            return self.noteNodes();
+        }
+        return self.noteNodes().sort(function (n1, n2) {
+            if (new Date(n1.latestTimestamp()) < new Date(n2.latestTimestamp())) {
+                return 1;
+            }
+            return -1;
+        });
+        self.notes.valueHasMutated();
+    });
+
     self.updateCurrentQueryContent = function (queryContents) {        
         var newQueryTokens = ko.observableArray([]);
         var queryTokens = queryContents.split(' ');
@@ -339,7 +363,7 @@ function NoteListViewModel() {
                 //}
             }
             var noteFacade = new NoteFacade(newNote, noteTags[i]);
-            self.noteNodeTags[lowerCaseTag].notes.push(noteFacade);            
+            self.noteNodeTags[lowerCaseTag].addNote(noteFacade);
         }
         //// each NoteNode contains every note, but decides whether to display it        
         //for (var j = 0; j < self.noteNodes().length; j++) {
@@ -365,7 +389,6 @@ function NoteListViewModel() {
     self.queryTag = function (noteNode) {
         if (noteNode.tag != UNCATEGORIZEDTAG) {
             HashTagClick(noteNode.tag);
-            SearchCachedNotes();
         }
     }
     self.editingNote = null;

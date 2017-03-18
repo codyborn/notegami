@@ -41,16 +41,16 @@ namespace WebRole.Controllers
             public string AuthToken { get; set; }
             public string QueryContents { get; set; }
         }
-        public class RecentTokensAction
-        {
-            public string Email { get; set; }
-            public string AuthToken { get; set; }
-        }
         public class DeleteRecentTokenAction
         {
             public string Email { get; set; }
             public string AuthToken { get; set; }
             public string Token { get; set; }
+        }
+        public class SimpleRequestInput
+        {
+            public string Email { get; set; }
+            public string AuthToken { get; set; }
         }
         public class CreateUpdateNoteResponse
         {
@@ -77,7 +77,7 @@ namespace WebRole.Controllers
                         !createNote.UTCOffset.HasValue)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
-                        
+
                         return response;
                     }
                     if (createNote.NoteContents.Length > Constant.MaxNoteLength)
@@ -97,6 +97,7 @@ namespace WebRole.Controllers
                         return response;
                     }
                     response.Note = IndexerBase.CreateNote(userId, (int)createNote.UTCOffset, createNote.NoteContents, createNote.Location, createNote.Email);
+                    LastUpdate.SetLastUpdate(userId);
                     response.Status = "Success";
                     return response;
                 }
@@ -148,6 +149,7 @@ namespace WebRole.Controllers
                         return response;
                     }
                     response.Note = IndexerBase.UpdateNote(userId, (int)updateNote.UTCOffset, updateNote.RowKey, updateNote.NoteContents, updateNote.Location, updateNote.Completed);
+                    LastUpdate.SetLastUpdate(userId);
                     response.Status = "Success";
                     return response;
                 }
@@ -189,6 +191,7 @@ namespace WebRole.Controllers
                     }
                     bool recentTokensUpdated;
                     IndexerBase.DeleteNote(userId, deleteNote.RowKey, out recentTokensUpdated);
+                    LastUpdate.SetLastUpdate(userId);
                     if (recentTokensUpdated)
                     {
                         return "RefreshRecent";
@@ -220,7 +223,7 @@ namespace WebRole.Controllers
         [HttpPost]
         public QueryNotesResponse QueryNotes([FromBody]QueryNotesAction queryNotes)
         {
-            QueryNotesResponse response = new QueryNotesResponse();            
+            QueryNotesResponse response = new QueryNotesResponse();
             response.Notes = new List<Note>();
 
             if (string.IsNullOrEmpty(queryNotes.Email) ||
@@ -244,7 +247,33 @@ namespace WebRole.Controllers
         }
 
         [HttpPost]
-        public Dictionary<string, IEnumerable<string>> QueryRecentTokens([FromBody]RecentTokensAction recentNotesRequest)
+        public QueryNotesResponse GetAllNotes([FromBody]SimpleRequestInput allNotesRequest)
+        {
+            QueryNotesResponse response = new QueryNotesResponse();
+            response.Notes = new List<Note>();
+
+            if (string.IsNullOrEmpty(allNotesRequest.Email) ||
+                string.IsNullOrEmpty(allNotesRequest.AuthToken))
+            {
+                response.Status = "InvalidInput";
+                return response;
+            }
+            // Use the email and authToken to get the userId
+            string userId = UserController.GetUserId(allNotesRequest.Email, allNotesRequest.AuthToken);
+            if (string.IsNullOrEmpty(userId))
+            {
+                // Expired AuthToken
+                response.Status = "Expired";
+                return response;
+            }
+            response.Notes = IndexerBase.GetAllNotes(userId);
+            response.Status = "Success";
+            return response;
+        }
+
+
+        [HttpPost]
+        public Dictionary<string, IEnumerable<string>> QueryRecentTokens([FromBody]SimpleRequestInput recentNotesRequest)
         {
             if (string.IsNullOrEmpty(recentNotesRequest.Email) ||
                 string.IsNullOrEmpty(recentNotesRequest.AuthToken))
@@ -278,7 +307,31 @@ namespace WebRole.Controllers
                 return null;
             }
             new HashTagIndexer().DeleteRecentToken(userId, deleteRecentTokenRequest.Token);
+            LastUpdate.SetLastUpdate(userId);
             return IndexerBase.GetAllRecentTokens(userId);
+        }
+
+        [HttpPost]
+        public long? GetLastUpdate([FromBody]SimpleRequestInput getLastUpdateAction)
+        {
+            if (string.IsNullOrEmpty(getLastUpdateAction.Email) ||
+                string.IsNullOrEmpty(getLastUpdateAction.AuthToken))
+            {
+                return null;
+            }
+            // Use the email and authToken to get the userId
+            string userId = UserController.GetUserId(getLastUpdateAction.Email, getLastUpdateAction.AuthToken);
+            if (string.IsNullOrEmpty(userId))
+            {
+                // Expired AuthToken
+                return null;
+            }
+            DateTime? lastUpdate = LastUpdate.GetLastUpdate(userId);
+            if (lastUpdate == null)
+            {
+                return null;
+            }
+            return lastUpdate.Value.Ticks;
         }
     }
 }

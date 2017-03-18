@@ -22,7 +22,8 @@ namespace WebRole
             users,
             indices,
             recentTokens,
-            pingTable
+            pingTable,
+            lastUpdate
         };
 
         private static Dictionary<string, CloudTable> GetTables()

@@ -53,6 +53,55 @@ function QueryNotes(queryContents, callBackOnSuccess, isRecentNotesQuery) {
     }
 }
 
+
+function QueryAllNotes(callBackOnSuccess) {
+    var email = CacheStoreGet("email");
+    var authToken = CacheStoreGet("token");
+    var data =
+        {
+            Email: email,
+            AuthToken: authToken
+        };
+    $.ajax({
+        type: "POST",
+        url: "../note/GetAllNotes",
+        data: data,
+        success: function (response) {
+            if (response.Status == "Success") {
+                callBackOnSuccess(response);
+            }
+            else if (response.Status == "Expired") {
+                // Auth token has expired
+                AuthUserAndSetCookie(email, CacheStoreGet("password"),
+                        function () { QueryAllNotes(callBackOnSuccess); }, // on success
+                        function () {
+                            Redirect('Signup.html');
+                            showError("Please log in to continue");
+                        }) // on failure
+            }
+        }
+    });
+}
+
+
+function GetLastUpdateTime(callBackOnSuccess) {
+    var email = CacheStoreGet("email");
+    var authToken = CacheStoreGet("token");
+    var data =
+        {
+            Email: email,
+            AuthToken: authToken
+        };
+    $.ajax({
+        type: "POST",
+        url: "../note/GetLastUpdate",
+        data: data,
+        success: function (response) {            
+            callBackOnSuccess(response);
+        }
+    });
+}
+
 // Displays recent tokens as quick search links
 function QueryRecentTokens() {
     var email = CacheStoreGet("email");

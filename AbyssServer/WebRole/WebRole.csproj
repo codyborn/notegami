@@ -222,6 +222,7 @@
     </Compile>
     <Compile Include="IndexerBase.cs" />
     <Compile Include="Models\Index.cs" />
+    <Compile Include="Models\LastUpdate.cs" />
     <Compile Include="Models\Note.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

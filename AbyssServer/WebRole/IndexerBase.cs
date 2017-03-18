@@ -236,6 +236,12 @@ namespace WebRole
             }
         }
 
+        public static IEnumerable<Note> GetAllNotes(string userId)
+        {
+            IEnumerable<Note> allNotes = TableStore.GetAllEntitiesInAPartition<Note>(TableStore.TableName.notes, userId).Where(n => n.EncodedNote != null);
+            return RemoveIndicesFromResponse(allNotes);
+        }
+
         /// <summary>
         /// Cleanup the indices from the response
         /// </summary>

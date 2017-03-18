@@ -139,7 +139,6 @@ function AddPressAndHoldListener(element, action) {
 
 // full screen on mobile devices
 window.addEventListener("load", function () { window.scrollTo(0, 0); });
-var activeAction = QueryNotes;
 // Will be populated by geocoder
 var userCity = "";
 $(document).ready(function () {
@@ -158,18 +157,16 @@ $(document).ready(function () {
     // Handle pre-query in QS
     var queryStringValue = GetQSParameterByName("q");
     if (queryStringValue != "" && queryStringValue != null) {
-        document.getElementById('QueryContents').value = queryStringValue;
-        QueryNotes();
+        SetQueryContent(queryStringValue);
     }
     else {
-        displayingRecentNotes = true;
+        var recentNoteString = DateToString(new Date(new Date().setDate(new Date().getDate() - 7))) + "-" + DateToString(new Date());
+        MasterViewModel.noteListViewModel.updateCurrentQueryContent(recentNoteString);
         cachedNotes.DisplayRecentNotes();
-        cachedNotes.QueryRecentNotes();
     }
 
     // Add keyboard shortcuts to body
-    $(window).keydown(function (event) {
-        console.log(event.keyCode);
+    $(window).keydown(function (event) {        
         if (event.ctrlKey) {
             // Ctrl-F
             if (event.keyCode == 70) {
@@ -237,9 +234,9 @@ function DisplayQuickSearchBar(response) {
     quickSearchContainer.innerHTML = "";
     // Add date links
     var dateList = document.createElement('div');
-    dateList.appendChild(CreateQuickSearchButton("Today", false, function () { return DateToString(new Date()); }, true));
-    dateList.appendChild(CreateQuickSearchButton("Yesterday", false, function () { return DateToString(new Date(new Date().setDate(new Date().getDate() - 1))); }, true));
-    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, function () { return DateToString(new Date(new Date().setDate(new Date().getDate() - 7))) + "-" + DateToString(new Date()); }, true));
+    dateList.appendChild(CreateQuickSearchButton("Today", false, function () { return DateToString(new Date()); }));
+    dateList.appendChild(CreateQuickSearchButton("Yesterday", false, function () { return DateToString(new Date(new Date().setDate(new Date().getDate() - 1))); }));
+    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, function () { return DateToString(new Date(new Date().setDate(new Date().getDate() - 7))) + "-" + DateToString(new Date()); }));
     quickSearchContainer.appendChild(dateList);
 
     if (response != null) {
@@ -249,7 +246,7 @@ function DisplayQuickSearchBar(response) {
         hashtagList.classList.add("QuickLinksList");
         hashtagList.classList.add("noselect");
         for (var i = 0; i < Math.min(response["tags"].length, recentTokenDisplayCount) ; i++) {
-            hashtagList.appendChild(CreateQuickSearchButton(response["tags"][i], true, null, true));
+            hashtagList.appendChild(CreateQuickSearchButton(response["tags"][i], true, null));
         }
         quickSearchContainer.appendChild(hashtagList);
     }
@@ -291,7 +288,7 @@ function DateToString(date) {
     return mm + "/" + dd + "/" + yyyy;
 }
 
-function CreateQuickSearchButton(text, addToNote, searchForFunc, searchCachedNotes) {
+function CreateQuickSearchButton(text, addToNote, searchForFunc) {
     var searchFor;
     if (searchForFunc == null) {
         searchFor = text;
@@ -304,12 +301,7 @@ function CreateQuickSearchButton(text, addToNote, searchForFunc, searchCachedNot
     button.className = "quickSearchButton";
     button.value = text;
     button.addEventListener("click", function () {
-        document.getElementById('QueryContents').value = searchFor;
-        if (searchCachedNotes) {
-            // Update local tokens to current search input
-            SearchCachedNotes();
-        }
-        QueryNotes();
+        SetQueryContent(searchFor);
     });
     var addToNoteAction = function () {
         if (addToNote != null && addToNote) {
@@ -334,8 +326,7 @@ function CreateQuickInputButton(tag) {
         AddTagToNoteContent(tag);
     });
     var queryTagAction = function () {
-        document.getElementById('QueryContents').value = tag;
-        QueryNotes();
+        SetQueryContent(tag);
         return false; /* prevent context menu from popping up */
     };
     // on right click
@@ -364,14 +355,17 @@ function DisplayResults(response, queryContents) {
     if (response != null && response.length > 0) {
         // let's us know which nodes to show
         MasterViewModel.noteListViewModel.mergeNotes(response, queryContents);
-        //ScrollToBottom();
         LimitTextAreaMaxLength();
     }
 }
 
 function HashTagClick(text) {
+    SetQueryContent(text);
+}
+
+function SetQueryContent(text) {
     document.getElementById('QueryContents').value = text;
-    QueryNotes();
+    SearchCachedNotes();
 }
 
 var autoScrolling = false;

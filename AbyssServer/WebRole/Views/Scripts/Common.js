@@ -144,7 +144,7 @@ function Urldecode(str) {
 
 function PerformActionIfReturn(event) {
     var x = event.which || event.keyCode;
-    if (x == 13) // return
+    if (typeof activeAction != "undefined" && x == 13) // return
     {
         activeAction();
     }
@@ -266,13 +266,14 @@ function AreDatesEqualOrContained(dateString1, dateString2) {
             }
             var startDate = new Date(Date.parse(dateTokens[0]));
             var endDate = new Date(Date.parse(dateTokens[1]));
+            // correct ordering
+            if (startDate > endDate) {
+                var tmp = startDate;
+                startDate = endDate;
+                endDate = tmp;
+            }
             var firstDate = new Date(Date.parse(dateString1));
-            return ((firstDate.getDate() >= startDate.getDate() &&
-                firstDate.getMonth() >= startDate.getMonth() &&
-                firstDate.getFullYear() >= startDate.getFullYear()) &&
-                (firstDate.getDate() <= endDate.getDate() &&
-                firstDate.getMonth() <= endDate.getMonth() &&
-                firstDate.getFullYear() <= endDate.getFullYear()));
+            return firstDate >= startDate && firstDate <= endDate;
         }        
     }
     var firstDate = new Date(Date.parse(dateString1));

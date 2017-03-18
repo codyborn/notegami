@@ -66,10 +66,10 @@
                             <input type="submit" id="MenuButton" onclick="ToggleMenu()" value="" onblur="CloseMenu()"/>
                         </td>
                         <td id="SearchInputTD">
-                            <input type="text" id="QueryContents" placeholder="Search" onkeyup="SearchCachedNotesWithBuffer()"/>
+                            <input type="text" id="QueryContents" placeholder="Search" onkeyup="SearchCachedNotesWithBuffer()" />
                         </td>
                         <td id="SearchButtonTD">
-                            <input type="submit" id="QueryButton" onclick="QueryNotes()" value="" />
+                            <input type="submit" id="QueryButton"  value="" />
                         </td>
                     </tr>
                 </table>
@@ -77,9 +77,9 @@
             </div>            
         </div>
         <div id="Results" class="contractedResults ClearStyleOnMobile" onscroll="UpdateSearchBarLocation(); HideQuickInputContainer();" style="display:none;" onclick="    HideQuickInputContainer()">
-            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noteNodes().length == 0 && $root.noteListViewModel.queryOccurred())">No results matched</div>
-            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noteNodes().length == 0 && !$root.noteListViewModel.queryOccurred())">Search for something to see your notes</div>
-            <span data-bind="foreach: $root.noteListViewModel.noteNodes, visible: $root.noteListViewModel.noteNodes().length > 0">
+            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.sortedNoteNodes().length == 0 && $root.noteListViewModel.queryOccurred())">No results matched</div>
+            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.sortedNoteNodes().length == 0 && !$root.noteListViewModel.queryOccurred())">Search for something to see your notes</div>
+            <span data-bind="foreach: $root.noteListViewModel.sortedNoteNodes, visible: $root.noteListViewModel.sortedNoteNodes().length > 0">
                 <div class="noteNode" data-bind="slideIn: shouldDisplayNode()">
                     <div class="noteTitle" data-bind="click: $root.noteListViewModel.queryTag, text: tag"></div>
                     <table class="noteContents">

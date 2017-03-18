@@ -1,18 +1,22 @@
 ﻿var cachedNotes = new CachedNotes();
-var displayingRecentNotes = false;
-var lastUpdatedCachedNotes = new Date();
-// one day in milliseconds
-var one_day = 1000 * 60 * 60 * 24;
-// Check to see if the results are expired
-this.updateChecker = window.setInterval(function () {
-    if ((new Date().getTime() - lastUpdatedCachedNotes.getTime()) > one_day) {
-        cachedNotes.QueryRecentNotes();
-    }
-}, 60 * 1000);
+var updateChecker = window.setInterval(function () { cachedNotes.UpdateIfExpired(); }, 10 * 1000);
 
 // Object that wraps the local cached notes
 function CachedNotes() {
     this.notes = null;
+    this.SetLastUpdate = function () {
+        localStorage.setItem("lastUpdateTime", (new Date().getTime() * 10000) + 621355968000000000);
+    }
+    this.UpdateIfExpired = function () {
+        GetLastUpdateTime(function (utcLastUpdate) {
+            var lastUpdate = localStorage.getItem("lastUpdateTime");        
+            if (lastUpdate == null || 
+                utcLastUpdate == null || 
+                utcLastUpdate > parseInt(lastUpdate)) {
+                cachedNotes.QueryAllNotes();
+            }
+        })
+    };
     this.GetNotes = function () {
         if (this.notes == null) {
             var cachedResponse = localStorage.getItem("recentNotes");
@@ -20,13 +24,14 @@ function CachedNotes() {
                 this.notes = JSON.parse(cachedResponse);
             }
             else {
-                this.QueryRecentNotes();
+                this.QueryAllNotes();
             }
         }
         return this.notes;
     };
     this.SetNotes = function (newNotes) {
         localStorage.setItem("recentNotes", JSON.stringify(newNotes));
+        this.SetLastUpdate();
         this.notes = newNotes;
     };
     this.DeleteNote = function (rowKey) {
@@ -38,6 +43,7 @@ function CachedNotes() {
             if (notes[i].RowKey == rowKey) {
                 notes.splice(i, 1);
                 localStorage.setItem("recentNotes", JSON.stringify(notes));
+                this.SetLastUpdate();
                 return;
             }
         }
@@ -51,6 +57,7 @@ function CachedNotes() {
             if (notes[i].RowKey == updatedNote.RowKey) {
                 notes[i] = updatedNote;
                 localStorage.setItem("recentNotes", JSON.stringify(notes));
+                this.SetLastUpdate();
                 return;
             }
         }
@@ -62,6 +69,25 @@ function CachedNotes() {
         }
         notes.push(newNote);
         localStorage.setItem("recentNotes", JSON.stringify(notes));
+        this.SetLastUpdate();
+    }
+    this.QueryAllNotes = function () {
+        QueryAllNotes(function (response) {
+            var oldNotes = cachedNotes.GetNotes();
+            cachedNotes.SetNotes(response.Notes);
+            // equivalence check        
+            if (response.Notes.length != oldNotes.length) {
+                cachedNotes.DisplayRecentNotes();
+                return;
+            }
+            for (var i = 0; i < response.Notes.length; i++) {
+                if (response.Notes[i].RowKey != oldNotes[i].RowKey ||
+                    response.Notes[i].Timestamp != oldNotes[i].Timestamp) {
+                    cachedNotes.DisplayRecentNotes();
+                    return;
+                }
+            }            
+        });
     }
     this.QueryRecentNotes = function () {
         var today = new Date();
@@ -90,17 +116,14 @@ function CachedNotes() {
         true);
     }
     this.DisplayRecentNotes = function () {
-        displayingRecentNotes = true;
         DisplayResults(this.GetNotes());
     }
 }
 
 function SearchCachedNotes() {
     var queryContents = document.getElementById('QueryContents').value;
-    if (!displayingRecentNotes) {
-        cachedNotes.DisplayRecentNotes();
-    }
     MasterViewModel.noteListViewModel.updateCurrentQueryContent(queryContents);
+    document.getElementById("Results").scrollTop = 0;
 }
 // Prevents searching after each character press which can be UI intensive
 // Waits for user to pause
