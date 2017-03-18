@@ -26,8 +26,12 @@ function DisplayTimeBasedTheme() {
     }
 }
 DisplayTimeBasedTheme();
-// Update theme every 60 sec
-var themeClock = window.setInterval(function () { DisplayTimeBasedTheme() }, 60 * 1000);
+
+function UpdateCurrDate(){
+    MasterViewModel.noteListViewModel.currDate(new Date());
+}
+// Update theme and date based elements every 60 sec
+var themeClock = window.setInterval(function () { DisplayTimeBasedTheme(); UpdateCurrDate(); }, 60 * 1000);
 
 var showDownConverter = new showdown.Converter({
     tasklists: 'true',
@@ -162,6 +166,24 @@ $(document).ready(function () {
         cachedNotes.DisplayRecentNotes();
         cachedNotes.QueryRecentNotes();
     }
+
+    // Add keyboard shortcuts to body
+    $(window).keydown(function (event) {
+        console.log(event.keyCode);
+        if (event.ctrlKey) {
+            // Ctrl-F
+            if (event.keyCode == 70) {
+                document.getElementById("QueryContents").select();
+                return false;
+            }
+            // Ctrl-N
+            else if (event.keyCode == 77) {
+                document.getElementById("NoteContents").select();
+                return false;
+            }
+        }
+        return true;
+    });
 });
 
 function PopulateAutoComplete(response) {
@@ -179,10 +201,10 @@ function split(val) {
 function extractLast(term) {
     return split(term).pop();
 }
-function AddWordsToInputAutoComplete(wordBag, targetIndex) {
+function AddWordsToInputAutoComplete(wordBag, targetId) {
     // clear previous one in case of reloading data
-    $("#" + targetIndex).textcomplete("destroy");
-    $("#" + targetIndex).textcomplete([
+    $("#" + targetId).textcomplete("destroy");
+    $("#" + targetId).textcomplete([
     {
         words: wordBag,
         match: /(#?\w+)$/i,
@@ -196,7 +218,13 @@ function AddWordsToInputAutoComplete(wordBag, targetIndex) {
             return word + ' ';
         }
     }
-    ]);
+    ], {
+        onKeydown: function (e, commands) {
+            if (e.keyCode === 9) { // TAB
+                return true;
+            }
+        }
+    });
 }
 
 function PopulateRecentTokenDisplays(response) {
@@ -208,15 +236,10 @@ function DisplayQuickSearchBar(response) {
     var quickSearchContainer = document.getElementById("QuickSearchContainer");
     quickSearchContainer.innerHTML = "";
     // Add date links
-    var today = new Date();
-    var yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-    var lastWeek = new Date();
-    lastWeek.setDate(today.getDate() - 7);
     var dateList = document.createElement('div');
-    dateList.appendChild(CreateQuickSearchButton("Today", false, DateToString(today), true));
-    dateList.appendChild(CreateQuickSearchButton("Yesterday", false, DateToString(yesterday), true));
-    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, DateToString(lastWeek) + "-" + DateToString(today), true));
+    dateList.appendChild(CreateQuickSearchButton("Today", false, function () { return DateToString(new Date()); }, true));
+    dateList.appendChild(CreateQuickSearchButton("Yesterday", false, function () { return DateToString(new Date(new Date().setDate(new Date().getDate() - 1))); }, true));
+    dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, function () { return DateToString(new Date(new Date().setDate(new Date().getDate() - 7))) + "-" + DateToString(new Date()); }, true));
     quickSearchContainer.appendChild(dateList);
 
     if (response != null) {
@@ -268,9 +291,13 @@ function DateToString(date) {
     return mm + "/" + dd + "/" + yyyy;
 }
 
-function CreateQuickSearchButton(text, addToNote, searchFor, searchCachedNotes) {
-    if (searchFor == null || searchFor == "") {
+function CreateQuickSearchButton(text, addToNote, searchForFunc, searchCachedNotes) {
+    var searchFor;
+    if (searchForFunc == null) {
         searchFor = text;
+    }
+    else {
+        searchFor = searchForFunc();
     }
     var button = document.createElement('input');
     button.type = "submit";
@@ -392,21 +419,22 @@ function UpdateSearchBarLocation() {
 }
 
 function DisplayNoteCharactersLeft() {
-    var noteLength = document.getElementById("NoteContents").value.length;
-    var lineCount = document.getElementById("NoteContents").value.lineCount();
+    var noteContentElement = document.getElementById("NoteContents");
+    var noteLength = noteContentElement.value.length;
+    var lineCount = noteContentElement.value.lineCount();
     // Adjust size of input field based on lineCount
     if (lineCount >= 4 && lineCount <= 10) {
-        document.getElementById("NoteContents").style.height = (83.2 / 3 * lineCount) + "px";
+        noteContentElement.style.height = (83.2 / 3 * lineCount) + "px";
     }
     else if (lineCount < 4) {
-        document.getElementById("NoteContents").style.height = "83.2px";
+        noteContentElement.style.height = "83.2px";
     }
     // Decrease the font size if text is over threshold
     if (noteLength > LARGEFONTMAXLENGTH) {
-        document.getElementById("NoteContents").className = "smallerFont";
+        noteContentElement.className = "smallerFont";
     }
     else {
-        document.getElementById("NoteContents").className = "";
+        noteContentElement.className = "";
     }
     document.getElementById("NoteStatusMessage").innerHTML = noteLength + "/" + MAXNOTELENGTH;
 }

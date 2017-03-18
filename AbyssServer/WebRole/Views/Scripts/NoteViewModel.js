@@ -96,6 +96,13 @@ function NoteFacade(note, currentTag) {
     self.saveEdit = function () {
         UpdateNote(self);
     };
+    self.keySaveEdit = function (data, event) {
+        if (event.ctrlKey && event.keyCode == 83) {
+            UpdateNote(self);
+            return false;
+        }
+        return true;
+    }
     self.onSuccessfulUpdate = function () {
         self.note().originalText(self.note().contents());
         self.editingNote(false);
@@ -140,7 +147,7 @@ function Note(id, text, timestamp, completed) {
         }
 
         // if it's not today, add the date
-        if (new Date(Date.now()).getDate() != date.getDate()) {
+        if (new Date(MasterViewModel.noteListViewModel.currDate()).getDate() != date.getDate()) {
             timeString = (date.getMonth() + 1) + "/" + date.getDate() + " " + timeString;
         }
         else {
@@ -177,6 +184,7 @@ function NoteNode(tag) {
             }
             return -1;
         });
+        self.notes.valueHasMutated();
     });
     self.shouldDisplayNode = ko.computed(function () {
         // if there are any notes visible
@@ -316,28 +324,30 @@ function NoteListViewModel() {
             if (self.noteNodeTags[lowerCaseTag] == null) {
                 var newNoteNode = new NoteNode(noteTags[i]);
                 self.noteNodes.push(newNoteNode);                
-                self.noteNodeTags[lowerCaseTag] = true;
-                // foreach noteNode that is not the new one,
-                // add each of its existing notes to this new noteNode
-                for (var j = 0; j < self.noteNodes.length; j++) {
-                    var oldNoteNode = self.noteNodes[j];
-                    if (oldNoteNode.tag != noteTags[i]) {
-                        for (var k = 0; k < oldNoteNode.notes.length; k++) {
-                            // clone note with new tag
-                            var noteFacade = new NoteFacade(oldNoteNode.notes[k].note(), noteTags[i]);
-                            newNoteNode.notes.push(noteFacade);
-                        }
-                    }
-                }
+                self.noteNodeTags[lowerCaseTag] = newNoteNode;
+                //// foreach noteNode that is not the new one,
+                //// add each of its existing notes to this new noteNode
+                //for (var j = 0; j < self.noteNodes.length; j++) {
+                //    var oldNoteNode = self.noteNodes[j];
+                //    if (oldNoteNode.tag != noteTags[i]) {
+                //        for (var k = 0; k < oldNoteNode.notes.length; k++) {
+                //            // clone note with new tag
+                //            var noteFacade = new NoteFacade(oldNoteNode.notes[k].note(), noteTags[i]);
+                //            newNoteNode.notes.push(noteFacade);
+                //        }
+                //    }
+                //}
             }
+            var noteFacade = new NoteFacade(newNote, noteTags[i]);
+            self.noteNodeTags[lowerCaseTag].notes.push(noteFacade);            
         }
-        // each NoteNode contains every note, but decides whether to display it        
-        for (var j = 0; j < self.noteNodes().length; j++) {
-            var noteNode = self.noteNodes()[j];
-            // create a note facade to display the tagless text
-            var noteFacade = new NoteFacade(newNote, noteNode.tag);
-            self.noteNodes()[j].notes.push(noteFacade);
-        }
+        //// each NoteNode contains every note, but decides whether to display it        
+        //for (var j = 0; j < self.noteNodes().length; j++) {
+        //    var noteNode = self.noteNodes()[j];
+        //    // create a note facade to display the tagless text
+        //    var noteFacade = new NoteFacade(newNote, noteNode.tag);
+        //    self.noteNodes()[j].notes.push(noteFacade);
+        //}
     }
     // Attempt to remove note from nodes
     // If key doesn't exist, ignore and return
@@ -360,6 +370,7 @@ function NoteListViewModel() {
     }
     self.editingNote = null;
     self.editingNoteTarget = null;
+    self.currDate = ko.observable(new Date());
 }
 
 // KO can only bind one object to the page

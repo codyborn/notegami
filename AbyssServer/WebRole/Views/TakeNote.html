@@ -93,7 +93,7 @@
                                     </div>
                                     <div data-bind="visible: editingNote()">
                                         <!-- If you change this structure, update the focus() path in TakeNote.js -->
-                                        <textarea type="text" class="noteEditInput" data-bind="textInput: note().contents, hasfocus: note().contents.focused, css: { completedNoteNode: note().completed(), smallerFont: smallerFont() }" onfocus="HideNoteInput()" onblur="DisplayNoteInput()"></textarea>
+                                        <textarea type="text" class="noteEditInput" data-bind="textInput: note().contents, hasfocus: note().contents.focused, css: { completedNoteNode: note().completed(), smallerFont: smallerFont() }, event: { 'keydown': keySaveEdit }" onfocus="HideNoteInput()" onblur="DisplayNoteInput()"></textarea>
                                     </div>
                                 </td>
                                 <td class="noteTimestampTD">

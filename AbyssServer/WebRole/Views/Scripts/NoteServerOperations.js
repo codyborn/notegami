@@ -1,6 +1,9 @@
 ﻿
 function QueryNotes(queryContents, callBackOnSuccess, isRecentNotesQuery) {
     var fromUserInput = false;
+    if (MasterViewModel.noteListViewModel.editingNote != null) {
+        MasterViewModel.noteListViewModel.editingNote.cancelEdit();
+    }
     if (typeof queryContents == "undefined") {
         queryContents = document.getElementById("QueryContents").value;
         fromUserInput = true;
