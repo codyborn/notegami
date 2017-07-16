@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using WebRole.Models;
+using Microsoft.Azure.Documents.Spatial;
 
 namespace WebRole.Controllers
 {
@@ -13,20 +14,22 @@ namespace WebRole.Controllers
         public class CreateNoteAction
         {
             public string Email { get; set; }
-            public int? UTCOffset { get; set; }
             public string AuthToken { get; set; }
             public string NoteContents { get; set; }
-            public string Location { get; set; }
+            public string City { get; set; }
+            public float Latitude { get; set; }
+            public float Longitude { get; set; }
         }
         public class UpdateNoteAction
         {
             public string Email { get; set; }
-            public int? UTCOffset { get; set; }
             public string AuthToken { get; set; }
             public string NoteContents { get; set; }
             public bool Completed { get; set; }
-            public string Location { get; set; }
+            public string City { get; set; }
             public string RowKey { get; set; }
+            public float Latitude { get; set; }
+            public float Longitude { get; set; }
         }
         public class DeleteNoteAction
         {
@@ -40,6 +43,9 @@ namespace WebRole.Controllers
             public string Email { get; set; }
             public string AuthToken { get; set; }
             public string QueryContents { get; set; }
+            public string City { get; set; }
+            public float Latitude { get; set; }
+            public float Longitude { get; set; }
         }
         public class DeleteRecentTokenAction
         {
@@ -51,11 +57,13 @@ namespace WebRole.Controllers
         {
             public string Email { get; set; }
             public string AuthToken { get; set; }
+            public float Latitude { get; set; }
+            public float Longitude { get; set; }
         }
         public class CreateUpdateNoteResponse
         {
             public string Status { get; set; }
-            public Note Note { get; set; }
+            public NoteModel Note { get; set; }
         }
 
         [HttpPost]
@@ -73,8 +81,7 @@ namespace WebRole.Controllers
                 {
                     if (string.IsNullOrEmpty(createNote.Email) ||
                         string.IsNullOrEmpty(createNote.AuthToken) ||
-                        string.IsNullOrEmpty(createNote.NoteContents) ||
-                        !createNote.UTCOffset.HasValue)
+                        string.IsNullOrEmpty(createNote.NoteContents))
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
 
@@ -96,8 +103,8 @@ namespace WebRole.Controllers
                         response.Status = "Expired";
                         return response;
                     }
-                    response.Note = IndexerBase.CreateNote(userId, (int)createNote.UTCOffset, createNote.NoteContents, createNote.Location, createNote.Email);
-                    LastUpdate.SetLastUpdate(userId);
+                    response.Note = NoteModel.AddNote(createNote.NoteContents, createNote.City, createNote.Latitude, createNote.Longitude, createNote.Email, userId);
+                    LastUpdateModel.SetLastUpdate(userId);
                     response.Status = "Success";
                     return response;
                 }
@@ -127,8 +134,7 @@ namespace WebRole.Controllers
                     if (string.IsNullOrEmpty(updateNote.Email) ||
                         string.IsNullOrEmpty(updateNote.AuthToken) ||
                         string.IsNullOrEmpty(updateNote.NoteContents) ||
-                        string.IsNullOrEmpty(updateNote.RowKey) ||
-                        !updateNote.UTCOffset.HasValue)
+                        string.IsNullOrEmpty(updateNote.RowKey))
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         return response;
@@ -148,8 +154,15 @@ namespace WebRole.Controllers
                         response.Status = "Expired";
                         return response;
                     }
-                    response.Note = IndexerBase.UpdateNote(userId, (int)updateNote.UTCOffset, updateNote.RowKey, updateNote.NoteContents, updateNote.Location, updateNote.Completed);
-                    LastUpdate.SetLastUpdate(userId);
+                    response.Note = NoteModel.UpdateNote(userId, updateNote.RowKey, updateNote.NoteContents, updateNote.City, updateNote.Latitude, updateNote.Longitude, updateNote.Completed);
+                    if (response.Note == null)
+                    {
+                        request.response = RequestTracker.RequestResponse.UserError;
+                        // Expired AuthToken
+                        response.Status = "Invalid";
+                        return response;
+                    }
+                    LastUpdateModel.SetLastUpdate(userId);
                     response.Status = "Success";
                     return response;
                 }
@@ -189,13 +202,11 @@ namespace WebRole.Controllers
                         // Expired AuthToken
                         return "Expired";
                     }
-                    bool recentTokensUpdated;
-                    IndexerBase.DeleteNote(userId, deleteNote.RowKey, out recentTokensUpdated);
-                    LastUpdate.SetLastUpdate(userId);
-                    if (recentTokensUpdated)
+                    if (!NoteModel.DeleteNote(userId, deleteNote.RowKey))
                     {
-                        return "RefreshRecent";
+                        return "Invalid";
                     }
+                    LastUpdateModel.SetLastUpdate(userId);
                     return "Success";
                 }
                 catch (Exception e)
@@ -217,14 +228,14 @@ namespace WebRole.Controllers
         public class QueryNotesResponse
         {
             public string Status { get; set; }
-            public IEnumerable<Note> Notes { get; set; }
+            public IEnumerable<NoteModel> Notes { get; set; }
         }
 
         [HttpPost]
         public QueryNotesResponse QueryNotes([FromBody]QueryNotesAction queryNotes)
         {
             QueryNotesResponse response = new QueryNotesResponse();
-            response.Notes = new List<Note>();
+            response.Notes = new List<NoteModel>();
 
             if (string.IsNullOrEmpty(queryNotes.Email) ||
                 string.IsNullOrEmpty(queryNotes.AuthToken) ||
@@ -242,34 +253,34 @@ namespace WebRole.Controllers
                 return response;
             }
             response.Status = "Success";
-            response.Notes = IndexerBase.QueryNotes(userId, queryNotes.QueryContents);
+            response.Notes = NoteModel.QueryNotes(userId, queryNotes.QueryContents, queryNotes.City, new Point(queryNotes.Longitude, queryNotes.Latitude)).AsEnumerable();
             return response;
         }
 
-        [HttpPost]
-        public QueryNotesResponse GetAllNotes([FromBody]SimpleRequestInput allNotesRequest)
-        {
-            QueryNotesResponse response = new QueryNotesResponse();
-            response.Notes = new List<Note>();
+        //[HttpPost]
+        //public QueryNotesResponse GetAllNotes([FromBody]SimpleRequestInput allNotesRequest)
+        //{
+        //    QueryNotesResponse response = new QueryNotesResponse();
+        //    response.Notes = new List<NoteModel>();
 
-            if (string.IsNullOrEmpty(allNotesRequest.Email) ||
-                string.IsNullOrEmpty(allNotesRequest.AuthToken))
-            {
-                response.Status = "InvalidInput";
-                return response;
-            }
-            // Use the email and authToken to get the userId
-            string userId = UserController.GetUserId(allNotesRequest.Email, allNotesRequest.AuthToken);
-            if (string.IsNullOrEmpty(userId))
-            {
-                // Expired AuthToken
-                response.Status = "Expired";
-                return response;
-            }
-            response.Notes = IndexerBase.GetAllNotes(userId);
-            response.Status = "Success";
-            return response;
-        }
+        //    if (string.IsNullOrEmpty(allNotesRequest.Email) ||
+        //        string.IsNullOrEmpty(allNotesRequest.AuthToken))
+        //    {
+        //        response.Status = "InvalidInput";
+        //        return response;
+        //    }
+        //    // Use the email and authToken to get the userId
+        //    string userId = UserController.GetUserId(allNotesRequest.Email, allNotesRequest.AuthToken);
+        //    if (string.IsNullOrEmpty(userId))
+        //    {
+        //        // Expired AuthToken
+        //        response.Status = "Expired";
+        //        return response;
+        //    }
+        //    response.Notes = IndexerBase.GetAllNotes(userId);
+        //    response.Status = "Success";
+        //    return response;
+        //}
 
 
         [HttpPost]
@@ -287,28 +298,15 @@ namespace WebRole.Controllers
                 // Expired AuthToken
                 return null;
             }
-            return IndexerBase.GetAllRecentTokens(userId);
-        }
-
-        [HttpPost]
-        public Dictionary<string, IEnumerable<string>> DeleteRecentToken([FromBody]DeleteRecentTokenAction deleteRecentTokenRequest)
-        {
-            if (string.IsNullOrEmpty(deleteRecentTokenRequest.Email) ||
-                string.IsNullOrEmpty(deleteRecentTokenRequest.AuthToken) ||
-                string.IsNullOrEmpty(deleteRecentTokenRequest.Token))
+            Dictionary<string, IEnumerable<string>> tokens = new Dictionary<string, IEnumerable<string>>();
+            tokens["searchtags"] = TransactionModel.GetTagsByLocation(userId, new Point(recentNotesRequest.Longitude, recentNotesRequest.Latitude), TransactionModel.TransactionType.Search).Take(100);
+            tokens["createtags"] = TransactionModel.GetTagsByLocation(userId, new Point(recentNotesRequest.Longitude, recentNotesRequest.Latitude), TransactionModel.TransactionType.Add).Take(100);
+            if (tokens["searchtags"].Count() < 20)
             {
-                return null;
+                tokens["searchtags"] = tokens["searchtags"].Union(tokens["createtags"]);
             }
-            // Use the email and authToken to get the userId
-            string userId = UserController.GetUserId(deleteRecentTokenRequest.Email, deleteRecentTokenRequest.AuthToken);
-            if (string.IsNullOrEmpty(userId))
-            {
-                // Expired AuthToken
-                return null;
-            }
-            new HashTagIndexer().DeleteRecentToken(userId, deleteRecentTokenRequest.Token);
-            LastUpdate.SetLastUpdate(userId);
-            return IndexerBase.GetAllRecentTokens(userId);
+            tokens["locations"] = TransactionModel.GetRecentLocations(userId);
+            return tokens;
         }
 
         [HttpPost]
@@ -326,7 +324,7 @@ namespace WebRole.Controllers
                 // Expired AuthToken
                 return null;
             }
-            DateTime? lastUpdate = LastUpdate.GetLastUpdate(userId);
+            DateTime? lastUpdate = LastUpdateModel.GetLastUpdate(userId);
             if (lastUpdate == null)
             {
                 return null;

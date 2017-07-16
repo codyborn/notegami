@@ -12,6 +12,7 @@
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
       <Setting name="StorageConnectionString" />
+      <Setting name="DocDBStorageConnectionString" />
       <Setting name="SendGridPrivateKey" />
     </ConfigurationSettings>
     <Endpoints>

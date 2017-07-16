@@ -1,11 +1,14 @@
 ﻿/* LOCATION JS */
 var geocoder;
+var userLat;
+var userLng;
 
 //Get the latitude and the longitude;
 function successFunction(position) {
-    var lat = position.coords.latitude;
-    var lng = position.coords.longitude;
-    GetCity(lat, lng)
+    userLat = position.coords.latitude;
+    userLng = position.coords.longitude;
+    GetCity(userLat, userLng);
+    QueryRecentTokens();
 }
 
 function GeoCoderInit() {

@@ -9,8 +9,7 @@ namespace AbyssTest
 {
     [TestClass]
     public class CopyIndexToNewTable
-    {
-        [TestMethod]
+    {        
         public void CopyHistory()
         {
             // foreach user
@@ -40,7 +39,7 @@ namespace AbyssTest
                 }
             }
         }
-        [TestMethod]
+        
         public void CopyIndexNotes()
         {
             // foreach user

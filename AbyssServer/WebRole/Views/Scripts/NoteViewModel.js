@@ -14,10 +14,14 @@ function NoteFacade(note, currentTag) {
         UpdateNote(self);
     });
 
-    self.shouldBeVisible = ko.computed(function () {
+    self.shouldBeVisible = ko.computed(function () {        
         var tags = self.note().getNoteTags();
         if (self.note().originalText() == "") {
             return false;
+        }
+        if (!MasterViewModel.noteListViewModel.displayingRecentNotes())
+        {
+            return true;
         }
 
         // Filter notes on tokens if there exists local query tokens
@@ -25,9 +29,11 @@ function NoteFacade(note, currentTag) {
             var shouldBeVisible = true;
             for (var i = 0; i < MasterViewModel.noteListViewModel.currentQueryTokens().length; i++) {
                 var token = MasterViewModel.noteListViewModel.currentQueryTokens()[i].toLowerCase();
-                if (!(self.note().originalText().toLowerCase().indexOf(token) >= 0 || AreDatesEqualOrContained(self.note().timestamp, token))) {
-                    shouldBeVisible = false;
-                    break;
+                if (!(self.note().originalText().toLowerCase().indexOf(token) >= 0 ||
+                    AreDatesEqualOrContained(self.note().timestamp, token) ||
+                    self.note().cities.includes(token.replace('@','')))) {
+                        shouldBeVisible = false;
+                        break;
                 }
             }
             if (!shouldBeVisible) {
@@ -121,12 +127,13 @@ function NoteFacade(note, currentTag) {
     self.note().contents.focused = ko.observable();
 }
 
-function Note(id, text, timestamp, completed) {
+function Note(id, text, timestamp, completed, cities) {
     var self = this;
     self.noteId = id;
     self.originalText = ko.observable(text);
     self.contents = ko.observable(text);
     self.timestamp = timestamp;
+    self.cities = cities;
     self.completed = ko.observable(completed);
     // allows only one facade to save the note at a time
     self.updating = false;
@@ -220,23 +227,23 @@ function NoteNode(tag) {
     };
 
     this.moveNote = function (elem) {
-        if (elem.nodeType == 1) {
-            if (elem.offsetTop !== elem.saveOffsetTop) {
-                var tempElement = elem.cloneNode(true);
-                $(elem).css({ visibility: 'hidden' });
-                $(tempElement).css({
-                    position: "absolute",
-                    width: window.getComputedStyle(elem).width
-                });
-                elem.parentNode.appendChild(tempElement);
-                $(tempElement)
-                    .css({ top: elem.saveOffsetTop })
-                    .animate({ top: elem.offsetTop }, function () {
-                        $(elem).css({ visibility: 'visible' });
-                        elem.parentNode.removeChild(tempElement);
-                    });
-            }
-        }
+        //if (elem.nodeType == 1) {
+        //    if (elem.offsetTop !== elem.saveOffsetTop) {
+        //        var tempElement = elem.cloneNode(true);
+        //        $(elem).css({ visibility: 'hidden' });
+        //        $(tempElement).css({
+        //            position: "absolute",
+        //            width: window.getComputedStyle(elem).width
+        //        });
+        //        elem.parentNode.appendChild(tempElement);
+        //        $(tempElement)
+        //            .css({ top: elem.saveOffsetTop })
+        //            .animate({ top: elem.offsetTop }, function () {
+        //                $(elem).css({ visibility: 'visible' });
+        //                elem.parentNode.removeChild(tempElement);
+        //            });
+        //    }
+        //}
     };
 }
 
@@ -250,6 +257,8 @@ function NoteListViewModel() {
     self.noteNodeTags = [];
     // Tokenizes current query for dynamic updating of displayed notes
     self.currentQueryTokens = ko.observableArray([]);
+    self.displayingRecentNotes = ko.observable(true);
+    self.noResultsFound = ko.observable(false);
 
     // sort notes first on completed, second on date
     self.sortedNoteNodes = ko.computed(function () {
@@ -265,13 +274,21 @@ function NoteListViewModel() {
         self.notes.valueHasMutated();
     });
 
-    self.updateCurrentQueryContent = function (queryContents) {        
+    self.updateCurrentQueryContent = function (queryContents) {
+        if (typeof queryContents == "undefined") {
+            queryContents = " ";
+        }
         var newQueryTokens = ko.observableArray([]);
-        var queryTokens = queryContents.split(' ');
+        var queryTokens = queryContents.split(' ');        
         for (var j = 0; j < queryTokens.length; j++) {
             if (queryTokens[j].length > 0) {
                 newQueryTokens.push(queryTokens[j]);
             }
+        }
+        if (newQueryTokens().length == 0) {
+            // default to recent if not searching anything
+            var recentNoteString = DateToString(new Date(new Date().setDate(new Date().getDate() - 7))) + "-" + DateToString(new Date());
+            newQueryTokens.push(recentNoteString);
         }
         self.currentQueryTokens(newQueryTokens());
     }
@@ -284,58 +301,77 @@ function NoteListViewModel() {
     self.currentDisplayedNotes = new Array();
 
     // Operations
-    self.mergeNotes = function (notes, queryContents) {
-        // clone the existing displayed notes and clear the contents to be filled below
-        var currentDisplayedNotes_clone = $.extend({}, self.currentDisplayedNotes);
-        self.currentDisplayedNotes = new Array();
-        // clone the existing note nodes to keep track of what should be removed
-        var currentNoteNodeTags = $.extend({}, self.noteNodeTags);
+    self.paginatedMerging = function (notes, queryContents, previouslyDisplayedNotes, previouslyDisplayedTags, startIndex) {
+        if (typeof startIndex == "undefined") {
+            startIndex = 0;
+        }
+        if (typeof previouslyDisplayedNotes == "undefined") {
+            // clone the existing displayed notes and clear the contents to be filled below
+            previouslyDisplayedNotes = $.extend({}, self.currentDisplayedNotes);
+            self.currentDisplayedNotes = new Array();
+            // clone the existing note nodes to keep track of what should be removed
+            previouslyDisplayedTags = $.extend({}, self.noteNodeTags);
+            self.queryContents = queryContents;
+        }
+        var notesToProcess = new Array();
+        var notesLength = notes.length;
+        var lastIndex = 0;
+        for (var i = 0; i+startIndex < notesLength && i < 100; i++) {
+            notesToProcess.push(notes[i + startIndex]);
+            lastIndex = i + startIndex + 1;
+        }
+        self.mergeNotes(notesToProcess, previouslyDisplayedNotes, previouslyDisplayedTags);
 
-        self.queryContents = queryContents;
+        // Keep merging if there exist more pages of notes, otherwise cleanup the dead notes
+        if (lastIndex != notes.length) {
+            window.setTimeout(function () {
+                self.paginatedMerging(notes, queryContents, previouslyDisplayedNotes, previouslyDisplayedTags, lastIndex)
+            }, 100);
+        }
+        else {
+            // Cleanup notes that were not seen
+            for (var key in previouslyDisplayedNotes) {
+                if (previouslyDisplayedNotes[key] != null) {
+                    self.removeNote(key);
+                }
+            }
+            // Cleanup notes nodes that were not seen
+            for (var key in previouslyDisplayedTags) {
+                if (previouslyDisplayedTags[key] != null) {
+                    delete self.noteNodeTags[key];
+                }
+            }
+        }
+        // Set the results flag
+        self.noResultsFound(Object.keys(self.currentDisplayedNotes).length == 0);
+    }
+    self.mergeNotes = function (notes, previouslyDisplayedNotes, previouslyDisplayedTags) {        
         for (var i = notes.length - 1; i >= 0; i--) {
             // create a dummy note object to get the note tags
-            var newNote = new Note("dummy", Urldecode(notes[i].EncodedNote), null, false);
+            var newNote = new Note("dummy", Urldecode(notes[i].encodedNote), null, false, []);
             var noteTags = newNote.getNoteTags();
             // track which tags we haven't seen by removing the ones we do see from the tracking list
             for (var j = 0; j < noteTags.length; j++) {
                 var lowerCaseTag = noteTags[j].toLowerCase();
-                currentNoteNodeTags[lowerCaseTag] = null;
+                previouslyDisplayedTags[lowerCaseTag] = null;
             }
 
             // If the note to be displayed doesn't exist or is out of date, attempt to remove and add it
-            if (typeof currentDisplayedNotes_clone[notes[i].RowKey] == "undefined" ||
-                currentDisplayedNotes_clone[notes[i].RowKey] != notes[i].Timestamp) {
-                self.removeNote(notes[i].RowKey);
-                self.currentDisplayedNotes[notes[i].RowKey] = notes[i].Timestamp;
-                MasterViewModel.noteListViewModel.addNote(notes[i].RowKey, notes[i].EncodedNote, notes[i].Timestamp, notes[i].Completed);
+            if (typeof previouslyDisplayedNotes[notes[i].id] == "undefined" ||
+                previouslyDisplayedNotes[notes[i].id] != notes[i].lastUpdatedTime) {                
+                self.removeNote(notes[i].id);
+                MasterViewModel.noteListViewModel.addNote(notes[i].id, notes[i].encodedNote, notes[i].lastUpdatedTime, notes[i].completed, notes[i].city);
             }
             // remove it from the cloned list so that we know it's been checked
-            currentDisplayedNotes_clone[notes[i].RowKey] = null;
-        }
-        // Cleanup notes that were not seen
-        for (var key in currentDisplayedNotes_clone) {
-            if (currentDisplayedNotes_clone[key] != null) {
-                self.removeNote(key);
-            }
-        }
-        // Cleanup nodes that were not seen
-        for (var tag in currentNoteNodeTags) {
-            if (currentNoteNodeTags[tag] != null) {
-                // seek and destroy
-                for (var j = 0; j < self.noteNodes().length; j++) {
-                    if (self.noteNodes()[j].tag == tag) {
-                        self.noteNodes().splice(j, 1);
-                        self.noteNodeTags[tag] = null;
-                        break;
-                    }
-                }
-            }
-        }
+            previouslyDisplayedNotes[notes[i].id] = null;
 
+            // update our currentDisplayedNotes list for next time
+            self.currentDisplayedNotes[notes[i].id] = notes[i].lastUpdatedTime;
+        }
     }
-    self.addNote = function (id, contents, timestamp, completed) {
+    self.addNote = function (id, contents, timestamp, completed, city) {
         // figure out which noteNodes this note belongs to
-        var newNote = new Note(id, Urldecode(contents), timestamp, completed);
+        var newNote = new Note(id, Urldecode(contents), timestamp, completed, city);
         var noteTags = newNote.getNoteTags();
         // add the new note obj to each of the lists
         // if a note is updated that is contained in multiple noteNodes, 
@@ -349,29 +385,10 @@ function NoteListViewModel() {
                 var newNoteNode = new NoteNode(noteTags[i]);
                 self.noteNodes.push(newNoteNode);                
                 self.noteNodeTags[lowerCaseTag] = newNoteNode;
-                //// foreach noteNode that is not the new one,
-                //// add each of its existing notes to this new noteNode
-                //for (var j = 0; j < self.noteNodes.length; j++) {
-                //    var oldNoteNode = self.noteNodes[j];
-                //    if (oldNoteNode.tag != noteTags[i]) {
-                //        for (var k = 0; k < oldNoteNode.notes.length; k++) {
-                //            // clone note with new tag
-                //            var noteFacade = new NoteFacade(oldNoteNode.notes[k].note(), noteTags[i]);
-                //            newNoteNode.notes.push(noteFacade);
-                //        }
-                //    }
-                //}
             }
             var noteFacade = new NoteFacade(newNote, noteTags[i]);
             self.noteNodeTags[lowerCaseTag].addNote(noteFacade);
         }
-        //// each NoteNode contains every note, but decides whether to display it        
-        //for (var j = 0; j < self.noteNodes().length; j++) {
-        //    var noteNode = self.noteNodes()[j];
-        //    // create a note facade to display the tagless text
-        //    var noteFacade = new NoteFacade(newNote, noteNode.tag);
-        //    self.noteNodes()[j].notes.push(noteFacade);
-        //}
     }
     // Attempt to remove note from nodes
     // If key doesn't exist, ignore and return
@@ -381,7 +398,8 @@ function NoteListViewModel() {
         for (var i = 0; i < self.noteNodes().length; i++) {
             for (var j = 0; j < self.noteNodes()[i].notes().length; j++) {
                 if (self.noteNodes()[i].notes()[j].note().noteId == id) {
-                    self.noteNodes()[i].notes().splice(j, 1);
+                    self.noteNodes()[i].notes.splice(j, 1);
+                    break;
                 }
             }
         }

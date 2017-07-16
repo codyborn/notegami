@@ -43,14 +43,10 @@
             ShowLoading("SignupButton");
             var email = document.getElementById("email").value;
             var password = document.getElementById("password").value;
-            var user =
-            {
+
+            var createUser = {
                 Email: email,
                 Password: password
-            }
-            var createUser = {
-                User: user,
-                UTCOffset: new Date().getTimezoneOffset()
             }
             showError("Creating Account");
             $.ajax({

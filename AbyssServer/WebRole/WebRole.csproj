@@ -76,6 +76,10 @@
       <HintPath>..\packages\Microsoft.ApplicationInsights.TraceListener.2.1.0\lib\net45\Microsoft.ApplicationInsights.TraceListener.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.Azure.Documents.Client, Version=1.14.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.DocumentDB.1.14.0\lib\net45\Microsoft.Azure.Documents.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
       <Private>True</Private>
@@ -163,6 +167,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Service References\Application Insights\ConnectedService.json" />
+    <Content Include=".well-known\acme-challenge\ihlIhkh4wzz9IDSqajfXwJt2XcNYQ35G6sn5GJ4CU_Q" />
+    <Content Include=".well-known\acme-challenge\ZMBzSj6fnqWpQqM-3xh12_YfyDdMEdIMVwtVgz3JtV8" />
+    <Content Include=".well-known\acme-challenge\CQ8TBfyXnxf9G2yWZ1f8_K_kVQf3EwW8EP2XwQNcl2I" />
+    <Content Include=".well-known\acme-challenge\eUN9fGH2IHC86afe8xrdKRf50g0SMbk7MmyrJscET2Y" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -192,6 +200,7 @@
     <Content Include="Views\Scripts\angular.js" />
     <Content Include="Views\Scripts\Common.js" />
     <Content Include="Views\Scripts\ko.observableDictionary.js" />
+    <Content Include="Views\Scripts\LocalCachedNotes_Worker.js" />
     <Content Include="Views\Scripts\Location.js" />
     <Content Include="Views\Scripts\NoteServerOperations.js" />
     <Content Include="Views\Scripts\NoteViewModel.js" />
@@ -217,17 +226,22 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\NoteController.cs" />
     <Compile Include="Controllers\UserController.cs" />
+    <Compile Include="CosmosDBClient.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="IndexerBase.cs" />
     <Compile Include="Models\Index.cs" />
     <Compile Include="Models\LastUpdate.cs" />
+    <Compile Include="Models\LastUpdateModel.cs" />
+    <Compile Include="Models\Model.cs" />
     <Compile Include="Models\Note.cs" />
+    <Compile Include="Models\NoteModel.cs" />
+    <Compile Include="Models\TransactionModel.cs" />
     <Compile Include="Models\User.cs" />
+    <Compile Include="Models\UserModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpecialNoteAction.cs" />
-    <Compile Include="TablePinger.cs" />
     <Compile Include="TableStore.cs" />
     <Compile Include="Telemetry.cs" />
     <Compile Include="Utils.cs" />
@@ -268,12 +282,15 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.Net.Compilers.1.0.0\build\Microsoft.Net.Compilers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Net.Compilers.1.0.0\build\Microsoft.Net.Compilers.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.0\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.0\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Azure.DocumentDB.1.14.0\build\Microsoft.Azure.DocumentDB.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Azure.DocumentDB.1.14.0\build\Microsoft.Azure.DocumentDB.targets'))" />
   </Target>
+  <Import Project="..\packages\Microsoft.Azure.DocumentDB.1.14.0\build\Microsoft.Azure.DocumentDB.targets" Condition="Exists('..\packages\Microsoft.Azure.DocumentDB.1.14.0\build\Microsoft.Azure.DocumentDB.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">
   </Target>
+  Ignore this
   -->
 </Project>

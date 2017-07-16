@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ActivePublishProfile>AbyssProduction</ActivePublishProfile>
     <PackageProfile>Local</PackageProfile>
-    <PackageSolutionConfiguration>Release</PackageSolutionConfiguration>
+    <PackageSolutionConfiguration>Debug</PackageSolutionConfiguration>
     <PackageEnableRemoteDesktop>False</PackageEnableRemoteDesktop>
   </PropertyGroup>
 </Project>

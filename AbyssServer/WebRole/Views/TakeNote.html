@@ -66,18 +66,18 @@
                             <input type="submit" id="MenuButton" onclick="ToggleMenu()" value="" onblur="CloseMenu()"/>
                         </td>
                         <td id="SearchInputTD">
-                            <input type="text" id="QueryContents" placeholder="Search" onkeyup="SearchCachedNotesWithBuffer()" />
+                            <input type="text" id="QueryContents" placeholder="Search" onkeyup="SearchCachedNotesWithBuffer(event)" />
                         </td>
                         <td id="SearchButtonTD">
-                            <input type="submit" id="QueryButton"  value="" />
+                            <input type="submit" id="QueryButton"  value="" onclick="QueryNotes()"/>
                         </td>
                     </tr>
                 </table>
                 <div id="QuickSearchContainer"></div>
             </div>            
         </div>
-        <div id="Results" class="contractedResults ClearStyleOnMobile" onscroll="UpdateSearchBarLocation(); HideQuickInputContainer();" style="display:none;" onclick="    HideQuickInputContainer()">
-            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.sortedNoteNodes().length == 0 && $root.noteListViewModel.queryOccurred())">No results matched</div>
+        <div id="Results" class="contractedResults ClearStyleOnMobile" onscroll="UpdateSearchBarLocation(); HideQuickInputContainer();" style="display:none;" onclick="HideQuickInputContainer()">
+            <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.noResultsFound() && $root.noteListViewModel.queryOccurred())">No results matched</div>
             <div class="NoResultsText noselect" data-bind="visible: ($root.noteListViewModel.sortedNoteNodes().length == 0 && !$root.noteListViewModel.queryOccurred())">Search for something to see your notes</div>
             <span data-bind="foreach: $root.noteListViewModel.sortedNoteNodes, visible: $root.noteListViewModel.sortedNoteNodes().length > 0">
                 <div class="noteNode" data-bind="slideIn: shouldDisplayNode()">
@@ -105,7 +105,7 @@
                                 <td colspan="2" class="noborder nopaddingtop">
                                     <div class="EditActionButtons">
                                         <span class="DeleteActionButtonContainer">
-                                            <input type="submit" class="DeleteNoteButton" data-bind="event: { mousedown: deleteNote }" value="" />
+                                            <input type="submit" class="DeleteNoteButton" data-bind="event: { mousedown: DeleteNote }" value="" />
                                             <label class="CompleteButton"><input type="checkbox" data-bind="checked: completed" value="Complete" />Mark as Complete</label>
                                         </span>
                                         <span class="EditActionButtonsContainer">

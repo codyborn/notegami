@@ -273,7 +273,8 @@ function AreDatesEqualOrContained(dateString1, dateString2) {
                 endDate = tmp;
             }
             var firstDate = new Date(Date.parse(dateString1));
-            return firstDate >= startDate && firstDate <= endDate;
+            endDate = new Date(new Date().setDate(endDate.getDate() + 1));
+            return firstDate >= startDate && firstDate < endDate;
         }        
     }
     var firstDate = new Date(Date.parse(dateString1));

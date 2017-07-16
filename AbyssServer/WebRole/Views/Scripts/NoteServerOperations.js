@@ -19,7 +19,9 @@ function QueryNotes(queryContents, callBackOnSuccess, isRecentNotesQuery) {
             {
                 Email: email,
                 AuthToken: authToken,
-                QueryContents: queryContents
+                QueryContents: queryContents,
+                Latitude: userLat,
+                Longitude: userLng
             };
         $.ajax({
             type: "POST",
@@ -27,12 +29,13 @@ function QueryNotes(queryContents, callBackOnSuccess, isRecentNotesQuery) {
             data: data,
             success: function (response) {
                 if (response.Status == "Success") {
+                    QueryRecentTokens();
                     if (!isRecentNotesQuery) {
-                        displayingRecentNotes = false;
+                        MasterViewModel.noteListViewModel.displayingRecentNotes(false);
                     }
                     if (typeof callBackOnSuccess == "undefined") {
                         MasterViewModel.noteListViewModel.queryOccurred(true);
-                        DisplayResults(response.Notes);
+                        DisplayResults(response.Notes, queryContents);
                     }
                     else {
                         callBackOnSuccess(response);
@@ -52,37 +55,6 @@ function QueryNotes(queryContents, callBackOnSuccess, isRecentNotesQuery) {
         });
     }
 }
-
-
-function QueryAllNotes(callBackOnSuccess) {
-    var email = CacheStoreGet("email");
-    var authToken = CacheStoreGet("token");
-    var data =
-        {
-            Email: email,
-            AuthToken: authToken
-        };
-    $.ajax({
-        type: "POST",
-        url: "../note/GetAllNotes",
-        data: data,
-        success: function (response) {
-            if (response.Status == "Success") {
-                callBackOnSuccess(response);
-            }
-            else if (response.Status == "Expired") {
-                // Auth token has expired
-                AuthUserAndSetCookie(email, CacheStoreGet("password"),
-                        function () { QueryAllNotes(callBackOnSuccess); }, // on success
-                        function () {
-                            Redirect('Signup.html');
-                            showError("Please log in to continue");
-                        }) // on failure
-            }
-        }
-    });
-}
-
 
 function GetLastUpdateTime(callBackOnSuccess) {
     var email = CacheStoreGet("email");
@@ -109,34 +81,13 @@ function QueryRecentTokens() {
     var data =
         {
             Email: email,
-            AuthToken: authToken
+            AuthToken: authToken,
+            Latitude: userLat,
+            Longitude: userLng
         };
     $.ajax({
         type: "POST",
         url: "../note/QueryRecentTokens",
-        data: data,
-        success: function (response) {
-            if (response != null) {
-                localStorage.setItem("recentTokens", JSON.stringify(response));
-                PopulateRecentTokenDisplays(response);
-            }
-        }
-    });
-}
-
-// Deletes recent token and reloads controls
-function DeleteRecentTokens(token) {
-    var email = CacheStoreGet("email");
-    var authToken = CacheStoreGet("token");
-    var data =
-        {
-            Email: email,
-            AuthToken: authToken,
-            Token: token
-        };
-    $.ajax({
-        type: "POST",
-        url: "../note/DeleteRecentToken",
         data: data,
         success: function (response) {
             if (response != null) {
@@ -177,10 +128,11 @@ function CreateNote() {
         var data =
             {
                 Email: email,
-                UTCOffset: new Date().getTimezoneOffset(),
                 AuthToken: authToken,
                 NoteContents: noteContents,
-                Location: userCity
+                City: userCity,
+                Latitude: userLat,
+                Longitude: userLng
             };
         $.ajax({
             type: "POST",
@@ -194,7 +146,7 @@ function CreateNote() {
                     document.getElementById("NoteStatusMessage").innerHTML = "Success";
                     var newNote = createNoteResponse.Note;
                     cachedNotes.AddNote(newNote);
-                    MasterViewModel.noteListViewModel.addNote(newNote.RowKey, newNote.EncodedNote, newNote.Timestamp, newNote.Completed);
+                    MasterViewModel.noteListViewModel.addNote(newNote.id, newNote.encodedNote, newNote.lastUpdatedTime, newNote.completed, newNote.city);
                     document.getElementById('NoteContents').focus();
                 }
                 else {
@@ -235,11 +187,12 @@ function UpdateNote(noteNodeObj) {
     var data =
         {
             Email: email,
-            UTCOffset: new Date().getTimezoneOffset(),
             AuthToken: authToken,
             NoteContents: noteContents,
             Completed: noteNodeObj.note().completed(),
-            Location: userCity,
+            City: userCity,
+            Latitude: userLat,
+            Longitude: userLng,
             RowKey: noteNodeObj.note().noteId
         };
     $.ajax({

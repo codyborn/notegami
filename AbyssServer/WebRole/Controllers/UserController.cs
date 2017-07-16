@@ -14,7 +14,8 @@ namespace WebRole.Controllers
         }
         public class CreateUserRequest
         {
-            public User User { get; set; }
+            public string Email { get; set; }
+            public string Password { get; set; }
             public int? UTCOffset { get; set; }
         }
 
@@ -22,39 +23,37 @@ namespace WebRole.Controllers
         public CreateUserResponse CreateUser([FromBody]CreateUserRequest userRequest)
         {
             CreateUserResponse response = new CreateUserResponse();
-            if (string.IsNullOrEmpty(userRequest.User.Email))
+            if (string.IsNullOrEmpty(userRequest.Email))
             {
                 response.Error = "Invalid Input";
                 return response;
             }
-            using (RequestTracker request = new RequestTracker(Constant.RequestAPI.CreateUser.ToString(), userRequest.User.Email))
+            using (RequestTracker request = new RequestTracker(Constant.RequestAPI.CreateUser.ToString(), userRequest.Email))
             {
                 try
                 {
-                    if (userRequest == null || userRequest.User == null || !userRequest.UTCOffset.HasValue)
+                    if (userRequest == null)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         response.Error = "Invalid Input";
                         return response;
                     }
-                    User user = userRequest.User;
-                    if (string.IsNullOrEmpty(user.Password) || user.Password.Length < 8)
+                    if (string.IsNullOrEmpty(userRequest.Password) || userRequest.Password.Length < 8)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         response.Error = "Password must be at least 8 characters";
                         return response;
                     }
-                    if (string.IsNullOrEmpty(user.Email) || !user.Email.Contains("@") || !user.Email.Contains("."))
+                    if (string.IsNullOrEmpty(userRequest.Email) || !userRequest.Email.Contains("@") || !userRequest.Email.Contains("."))
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         response.Error = "Invalid email address";
                         return response;
                     }
-                    user.Init();
-                    User retrievedUser;
-                    if (TableStore.Get<User>(TableStore.TableName.users, user.PartitionKey, user.Email, out retrievedUser))
+                    UserModel retrievedUser;
+                    if(UserModel.GetUser(userRequest.Email, out retrievedUser))                    
                     {
-                        if (!retrievedUser.AuthCheck(user.Password))
+                        if (!retrievedUser.AuthCheck(userRequest.Password))
                         {
                             // User exists and pw is wrong
                             request.response = RequestTracker.RequestResponse.UserError;
@@ -67,7 +66,7 @@ namespace WebRole.Controllers
                             // Generate temporary auth token
                             string loginToken = retrievedUser.GetAuthToken();
                             // Store with updated auth table
-                            TableStore.Update(TableStore.TableName.users, retrievedUser);
+                            UserModel.UpdateUser(retrievedUser);
                             request.response = RequestTracker.RequestResponse.LoginOnSignup;
 
                             response.Token = loginToken;
@@ -76,15 +75,17 @@ namespace WebRole.Controllers
                         }
                     }
 
-                    user.EncryptPassword();
-                    user.SignupDate = DateTime.UtcNow;
+                    UserModel user = new UserModel(userRequest.Email, userRequest.Password);
+                    LastUpdateModel.SetLastUpdate(user.UserId);
+
                     // Generate temporary auth token
                     string token = user.GetAuthToken();
-                    TableStore.Set(TableStore.TableName.users, user);
+                    user.Save();
+
                     // Create the tutorial notes
                     foreach (string note in Constant.TutorialNotes)
                     {
-                        IndexerBase.CreateNote(user.UserId, (int)userRequest.UTCOffset, note, string.Empty, user.Email);
+                        NoteModel.AddNote(note, string.Empty, 0F, 0F, user.Email, user.UserId);
                     }
 
                     response.Token = token;
@@ -113,35 +114,36 @@ namespace WebRole.Controllers
             User user = new User();
             user.Email = attempt.Email;            
             user.Init();
-            User retrievedUser;
-            TableStore.Get<User>(TableStore.TableName.users, user.PartitionKey, user.Email, out retrievedUser);
+            UserModel retrievedUser;
+            UserModel.GetUser(user.Email, out retrievedUser);
             if (retrievedUser == null)
             {
                 return false;
             }
-            return retrievedUser.RemoveAuthToken(attempt.AuthToken);
+            retrievedUser.RemoveAuthToken(attempt.AuthToken);
+            return UserModel.UpdateUser(retrievedUser);
         }
 
         [HttpPost]
-        public string AuthUser([FromBody]User user)
+        public string AuthUser([FromBody]CreateUserRequest authRequest)
         {
-            if (string.IsNullOrEmpty(user.Email))
+            if (string.IsNullOrEmpty(authRequest.Email))
             {
                 return string.Empty;
             }
-            using (RequestTracker request = new RequestTracker(Constant.RequestAPI.AuthUser.ToString(), user.Email))
+            using (RequestTracker request = new RequestTracker(Constant.RequestAPI.AuthUser.ToString(), authRequest.Email))
             {
                 try
                 {
-                    if (user == null || string.IsNullOrEmpty(user.Email) || string.IsNullOrEmpty(user.Password))
+                    if (authRequest == null || string.IsNullOrEmpty(authRequest.Email) || string.IsNullOrEmpty(authRequest.Password))
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         return string.Empty;
                     }
-                    user.Init();
-                    User retrievedUser;
-                    TableStore.Get<User>(TableStore.TableName.users, user.PartitionKey, user.Email, out retrievedUser);
-                    if (retrievedUser == null || !retrievedUser.AuthCheck(user.Password))
+                    UserModel retrievedUser;
+                    UserModel.GetUser(authRequest.Email, out retrievedUser);
+                    
+                    if (retrievedUser == null || !retrievedUser.AuthCheck(authRequest.Password))
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
                         return string.Empty;
@@ -149,7 +151,7 @@ namespace WebRole.Controllers
                     // Generate temporary auth token
                     string token = retrievedUser.GetAuthToken();
                     // Store with updated auth table
-                    TableStore.Update(TableStore.TableName.users, retrievedUser);
+                    UserModel.UpdateUser(retrievedUser);
                     return token;
                 }
                 catch (Exception e)
@@ -179,19 +181,18 @@ namespace WebRole.Controllers
         }
 
         [HttpPost]
-        public string SetPWResetToken([FromBody]User user)
+        public string SetPWResetToken([FromBody]UserModel tokenRequest)
         {
-            if (string.IsNullOrEmpty(user.Email))
+            if (string.IsNullOrEmpty(tokenRequest.Email))
             {
                 return string.Empty;
             }
-            using (RequestTracker request = new RequestTracker(Constant.RequestAPI.SetPWReset.ToString(), user.Email))
+            using (RequestTracker request = new RequestTracker(Constant.RequestAPI.SetPWReset.ToString(), tokenRequest.Email))
             {
                 try
-                {
-                    user.Init();
-                    User retrievedUser;
-                    TableStore.Get<User>(TableStore.TableName.users, user.PartitionKey, user.Email, out retrievedUser);
+                {                    
+                    UserModel retrievedUser;
+                    UserModel.GetUser(tokenRequest.Email, out retrievedUser);
                     if (retrievedUser == null)
                     {
                         request.response = RequestTracker.RequestResponse.UserError;
@@ -201,13 +202,14 @@ namespace WebRole.Controllers
                     Tuple<string, DateTime> resetToken = new Tuple<string, DateTime>(Utils.Rand().ToString(), DateTime.UtcNow.AddDays(1));
 
                     retrievedUser.PWResetTokenWithExpiry = resetToken;
-                    TableStore.Update(TableStore.TableName.users, retrievedUser);
+                    retrievedUser.Save();
+
                     // Send email
-                    Utils.SendMail(user.Email,
+                    Utils.SendMail(retrievedUser.Email,
                                   "Notegami.com Password Reset",
                                   string.Format(@"<p>Please use this link to create your new password.</p>
                                                   <a href='https://notegami.com/views/passwordreset.html?email={0}&token={1}'>Create Password</a>",
-                                  user.Email, resetToken.Item1)).Wait();
+                                  retrievedUser.Email, resetToken.Item1)).Wait();
 
                     return "Success";
                 }
@@ -291,8 +293,8 @@ namespace WebRole.Controllers
         public static string GetUserId(string email, string authToken)
         {
             email = Utils.RemoveSpecialCharacters(email.ToLowerInvariant());
-            User retrievedUser;
-            if(!TableStore.Get<User>(TableStore.TableName.users, Constant.UserPartition, email, out retrievedUser))
+            UserModel retrievedUser;
+            if (!UserModel.GetUser(email, out retrievedUser))
             {
                 return string.Empty;
             }

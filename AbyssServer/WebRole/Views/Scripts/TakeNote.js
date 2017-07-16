@@ -141,6 +141,7 @@ function AddPressAndHoldListener(element, action) {
 window.addEventListener("load", function () { window.scrollTo(0, 0); });
 // Will be populated by geocoder
 var userCity = "";
+
 $(document).ready(function () {
     $(function () {
         $("#MenuList").menu();
@@ -160,10 +161,9 @@ $(document).ready(function () {
         SetQueryContent(queryStringValue);
     }
     else {
-        var recentNoteString = DateToString(new Date(new Date().setDate(new Date().getDate() - 7))) + "-" + DateToString(new Date());
-        MasterViewModel.noteListViewModel.updateCurrentQueryContent(recentNoteString);
-        cachedNotes.DisplayRecentNotes();
+        MasterViewModel.noteListViewModel.updateCurrentQueryContent();
     }
+    cachedNotes.DisplayRecentNotes();
 
     // Add keyboard shortcuts to body
     $(window).keydown(function (event) {        
@@ -186,9 +186,9 @@ $(document).ready(function () {
 function PopulateAutoComplete(response) {
 
     if (response != null) {
-        var tagsAndLocations = response["tags"].concat(response["locations"]);
+        var tagsAndLocations = response["searchtags"].concat(response["locations"]);
         AddWordsToInputAutoComplete(tagsAndLocations, "QueryContents");
-        AddWordsToInputAutoComplete(response["tags"], "NoteContents");
+        AddWordsToInputAutoComplete(response["createtags"], "NoteContents");
     }
 }
 
@@ -239,14 +239,14 @@ function DisplayQuickSearchBar(response) {
     dateList.appendChild(CreateQuickSearchButton("Last 7 Days", false, function () { return DateToString(new Date(new Date().setDate(new Date().getDate() - 7))) + "-" + DateToString(new Date()); }));
     quickSearchContainer.appendChild(dateList);
 
-    if (response != null) {
+    if (response != null && response["searchtags"] != null) {
         var recentTokenDisplayCount = usingMobileDevice ? MAXRECENTTOKENSTODISPLAYFORMOBILE : MAXRECENTTOKENSTODISPLAYFORBROWSER;
         // Add hashtag links
         var hashtagList = document.createElement('div');
         hashtagList.classList.add("QuickLinksList");
         hashtagList.classList.add("noselect");
-        for (var i = 0; i < Math.min(response["tags"].length, recentTokenDisplayCount) ; i++) {
-            hashtagList.appendChild(CreateQuickSearchButton(response["tags"][i], true, null));
+        for (var i = 0; i < Math.min(response["searchtags"].length, recentTokenDisplayCount) ; i++) {
+            hashtagList.appendChild(CreateQuickSearchButton(response["searchtags"][i], true, null));
         }
         quickSearchContainer.appendChild(hashtagList);
     }
@@ -262,8 +262,8 @@ function DisplayQuickInputBar(response) {
         var hashtagList = document.createElement('div');
         hashtagList.classList.add("QuickLinksList");
         hashtagList.classList.add("noselect");
-        for (var i = 0; i < Math.min(response["tags"].length, recentTokenDisplayCount) ; i++) {
-            hashtagList.appendChild(CreateQuickInputButton(response["tags"][i]));
+        for (var i = 0; i < Math.min(response["createtags"].length, recentTokenDisplayCount) ; i++) {
+            hashtagList.appendChild(CreateQuickInputButton(response["createtags"][i]));
         }
         quickInputContainer.appendChild(hashtagList);
     }
@@ -352,9 +352,9 @@ function AddTagToNoteContent(tag) {
 // Groups each note by their tags and displays them in each category
 // if the user is querying for some specific tags, only display those
 function DisplayResults(response, queryContents) {        
-    if (response != null && response.length > 0) {
+    if (response != null) {
         // let's us know which nodes to show
-        MasterViewModel.noteListViewModel.mergeNotes(response, queryContents);
+        MasterViewModel.noteListViewModel.paginatedMerging(response, queryContents);
         LimitTextAreaMaxLength();
     }
 }

@@ -58,8 +58,11 @@ namespace WebRole
             // Create a note for developer
             return new Task(() =>
             {
-                string feedbackMessage = string.Concat(noteContents, "\n Email: ", email, "\n Location: ", location);
-                IndexerBase.CreateFeedbackNote(timestamp, feedbackMessage);
+                if (!string.IsNullOrEmpty(email))
+                {
+                    string feedbackMessage = string.Concat(noteContents, "\n Email: ", email, "\n Location: ", location);
+                    IndexerBase.CreateFeedbackNote(timestamp, feedbackMessage);
+                }
             });
         }
     }
